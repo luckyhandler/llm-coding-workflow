@@ -17,17 +17,31 @@ cd mcp-server
 npm install
 ```
 
+## Register with Hermes
+
+Add to `~/.hermes/config.yaml`:
+```yaml
+mcp_servers:
+  local-gemma:
+    command: /opt/homebrew/bin/node
+    args:
+      - /Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js
+    connect_timeout: 120.0
+    enabled: true
+```
+
 ## Register with Claude Code
 
 ```bash
-claude mcp add -s user local-gemma -- node /absolute/path/to/mcp-server/server.js
+claude mcp add -s user local-gemma -- node /Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js
 ```
 
 ## Register with Codex CLI
 
 ```bash
-codex mcp add local-gemma -- node /absolute/path/to/mcp-server/server.js
+codex mcp add local-gemma -- node /Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js
 ```
+
 
 ## Usage
 

@@ -64,19 +64,40 @@ async function ensureServerRunning() {
         "--threads", THREADS,
         "--ctx-size", CTX_SIZE,
       ],
-      { stdio: ["ignore", "pipe", "pipe"], detached: false }
+      { stdio: ["ignore", "ignore", "pipe"], detached: false }
     );
+
+    let lastStderr = "";
+    serverProcess.stderr?.on("data", (chunk) => {
+      lastStderr = chunk.toString().slice(-500);
+    });
 
     serverProcess.on("error", (err) => {
       console.error(`[local-gemma-mcp] Failed to spawn llama-server: ${err.message}`);
     });
+
+    serverProcess.on("exit", (code) => {
+      if (code !== 0 && code !== null) {
+        console.error(`[local-gemma-mcp] llama-server exited with code ${code}: ${lastStderr}`);
+      }
+    });
+
+    // Cleanup on parent process exit
+    const cleanup = () => {
+      if (serverProcess && !serverProcess.killed) {
+        serverProcess.kill("SIGTERM");
+      }
+    };
+    process.once("exit", cleanup);
+    process.once("SIGINT", cleanup);
+    process.once("SIGTERM", cleanup);
 
     // Wait up to ~60s for the server to come up
     for (let i = 0; i < 30; i++) {
       await sleep(2000);
       if (await isServerHealthy()) return;
     }
-    throw new Error("llama-server did not become healthy within 60s");
+    throw new Error(`llama-server did not become healthy within 60s. Last output: ${lastStderr}`);
   })();
 
   try {
