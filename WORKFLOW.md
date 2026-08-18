@@ -17,7 +17,8 @@ Local llama.cpp / Gemma 4 (via local-gemma MCP)
 
 1. **Standard Turns**: Agents handle design, discussions, reasoning, and normal code changes in context.
 2. **Explicit Offload (`/offload <task>`)**:
-   - Claude creates the architecture and module specification.
-   - Claude calls `implement_with_local_model` via the `local-gemma` MCP server.
-   - Local Gemma 4 synthesizes the code files.
-   - Claude saves the code to disk and critiques/tests the output.
+   - Agent creates architecture & module specification (signatures/interfaces only).
+   - Agent MUST invoke `implement_with_local_model` via the `local-gemma` MCP server (strictly prohibited from generating code bodies in response or via subagents).
+   - Local Gemma 4 synthesizes the implementation.
+   - Agent receives output, writes files to disk, and critiques/tests.
+

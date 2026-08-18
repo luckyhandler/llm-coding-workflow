@@ -3,4 +3,7 @@
 ## Delegation Policy
 
 1. **Frontier Operations**: Handle all reasoning, architecture, planning, and code changes directly by default.
-2. **Explicit Delegation Only**: Only dispatch to the `local-gemma` MCP server (`implement_with_local_model`) when explicitly instructed by the user or triggered by an orchestration command (`/offload`, `/local-implement`).
+2. **Explicit Delegation Only**: When explicitly instructed by the user or triggered by an orchestration command (`/offload`, `/local-implement`):
+   - You MUST call the `implement_with_local_model` MCP tool to generate the implementation.
+   - You are STRICTLY FORBIDDEN from generating function/class implementation code directly in your response or spawning background subagents.
+   - Only pass specifications to `implement_with_local_model`, wait for its output, and then write the returned code to disk.
