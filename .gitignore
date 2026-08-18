@@ -1,0 +1,22 @@
+# Model files (large binary)
+models/*.gguf
+models/*.bin
+models/*.safetensors
+
+# Cache directories
+models/.cache/
+*.cache/
+
+# Logs
+*.log
+
+# Workspace scratch
+workspace/.git/
+workspace/**/*.log
+workspace/.claude-plan-output.json
+workspace/.gemma-output.log
+workspace/.llama-server.log
+workspace/.llama-cache/
+
+# macOS
+.DS_Store

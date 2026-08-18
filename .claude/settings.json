@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(dart *)",
+      "Bash(flutter *)",
+      "Bash(llama-cli *)",
+      "Bash(llama-server *)",
+      "Bash(curl *)",
+      "Read",
+      "Edit",
+      "Write"
+    ]
+  },
+  "model": {
+    "default": "sonnet"
+  }
+}
