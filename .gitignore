@@ -7,16 +7,21 @@ models/*.safetensors
 models/.cache/
 *.cache/
 
+# Node dependencies
+node_modules/
+package-lock.json
+
 # Logs
 *.log
 
-# Workspace scratch
-workspace/.git/
-workspace/**/*.log
-workspace/.claude-plan-output.json
-workspace/.gemma-output.log
-workspace/.llama-server.log
-workspace/.llama-cache/
+# Workspace scratch (keep dir via .gitkeep, ignore generated content)
+workspace/*
+!workspace/.gitkeep
+
+# Dart build artifacts
+.dart_tool/
+.pub-cache/
+pubspec.lock
 
 # macOS
 .DS_Store

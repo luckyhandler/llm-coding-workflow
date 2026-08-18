@@ -1,0 +1,13 @@
+{
+  "name": "local-gemma-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing local Gemma 4 (llama.cpp) as an implementation tool for Claude Code / Codex",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "local-gemma-mcp": "./server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4"
+  }
+}
