@@ -27,9 +27,9 @@ const HOST = process.env.LOCAL_GEMMA_HOST || "127.0.0.1";
 const PORT = process.env.LOCAL_GEMMA_PORT || "8090";
 const BASE_URL = `http://${HOST}:${PORT}`;
 const N_GPU_LAYERS = process.env.LOCAL_GEMMA_GPU_LAYERS || "99";
-const CTX_SIZE = process.env.LOCAL_GEMMA_CTX_SIZE || "8192";
+const CTX_SIZE = process.env.LOCAL_GEMMA_CTX_SIZE || "65536";
 const THREADS = process.env.LOCAL_GEMMA_THREADS || "8";
-const DEFAULT_MAX_TOKENS = 6000; // Gemma 4 is a thinking model; needs headroom past its reasoning
+const DEFAULT_MAX_TOKENS = 8192; // Gemma 4 is a thinking model; needs headroom past its reasoning
 
 let serverProcess = null;
 let serverStarting = null;
@@ -63,6 +63,7 @@ async function ensureServerRunning() {
         "--n-gpu-layers", N_GPU_LAYERS,
         "--threads", THREADS,
         "--ctx-size", CTX_SIZE,
+        "--flash-attn",
       ],
       { stdio: ["ignore", "ignore", "pipe"], detached: false }
     );
@@ -110,8 +111,11 @@ async function ensureServerRunning() {
 async function callLocalModel({ prompt, system, max_tokens, temperature }) {
   await ensureServerRunning();
 
+  const defaultSystem =
+    "You are an expert coding assistant. Keep internal reasoning concise and focused purely on implementation details. Output clean, complete, robust code without unnecessary preamble.";
+
   const messages = [];
-  if (system) messages.push({ role: "system", content: system });
+  messages.push({ role: "system", content: system || defaultSystem });
   messages.push({ role: "user", content: prompt });
 
   const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
@@ -159,7 +163,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         "Use this to offload code-writing / boilerplate / mechanical implementation work after you (the calling agent) " +
         "have already produced the plan or architecture. Do NOT use this for architectural decisions or planning — " +
         "it is intended purely as a fast, free, local implementation worker. The model 'thinks' internally before " +
-        "responding, so allow enough max_tokens for both its reasoning and final output (default 6000).",
+        "responding, so allow enough max_tokens for both its reasoning and final output (default 8192).",
       inputSchema: {
         type: "object",
         properties: {
@@ -175,7 +179,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           },
           max_tokens: {
             type: "number",
-            description: "Max tokens for the response (reasoning + final output combined). Default 6000.",
+            description: "Max tokens for the response (reasoning + final output combined). Default 8192.",
           },
           temperature: {
             type: "number",
