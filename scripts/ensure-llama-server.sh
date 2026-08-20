@@ -19,7 +19,7 @@ nohup llama-server \
   --port "${PORT}" \
   --n-gpu-layers "${LOCAL_GEMMA_GPU_LAYERS:-99}" \
   --ctx-size "${LOCAL_GEMMA_CTX_SIZE:-65536}" \
-  --flash-attn \
+  --flash-attn on \
   --threads "${LOCAL_GEMMA_THREADS:-8}" > "${LOG_FILE}" 2>&1 &
 
 for i in {1..30}; do

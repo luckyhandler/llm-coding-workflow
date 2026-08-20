@@ -63,7 +63,7 @@ async function ensureServerRunning() {
         "--n-gpu-layers", N_GPU_LAYERS,
         "--threads", THREADS,
         "--ctx-size", CTX_SIZE,
-        "--flash-attn",
+        "--flash-attn", "on",
       ],
       { stdio: ["ignore", "ignore", "pipe"], detached: false }
     );
