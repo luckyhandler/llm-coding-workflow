@@ -186,8 +186,9 @@ if [ "${RUN_BENCHMARK}" = true ]; then
     echo "Running llama-bench with ${REC_THREADS} threads on ${TARGET_MODEL_FULL_PATH}..."
     llama-bench \
       -m "${TARGET_MODEL_FULL_PATH}" \
-      -n 128 \
-      -p 512,2048 \
+      -r 1 \
+      -n 64 \
+      -p 128,512 \
       -t "${REC_THREADS}" \
       -ngl "${REC_GPU_LAYERS}" || true
   else
