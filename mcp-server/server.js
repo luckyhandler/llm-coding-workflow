@@ -16,20 +16,46 @@ import {
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "..");
 
-const MODEL_PATH =
-  process.env.LOCAL_GEMMA_MODEL_PATH ||
-  path.join(__dirname, "..", "models", "gemma-4-12b-it-qat-q4_0.gguf");
+// Load .env from REPO_ROOT if present
+const envPath = path.join(REPO_ROOT, ".env");
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, "utf-8");
+  for (const line of envContent.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx !== -1) {
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+}
+
+const rawModelPath =
+  process.env.LOCAL_GEMMA_MODEL_PATH || "models/gemma-4-12b-it-qat-q4_0.gguf";
+const MODEL_PATH = path.isAbsolute(rawModelPath)
+  ? rawModelPath
+  : path.resolve(REPO_ROOT, rawModelPath);
+
 const HOST = process.env.LOCAL_GEMMA_HOST || "127.0.0.1";
 const PORT = process.env.LOCAL_GEMMA_PORT || "8090";
 const BASE_URL = `http://${HOST}:${PORT}`;
 const N_GPU_LAYERS = process.env.LOCAL_GEMMA_GPU_LAYERS || "99";
 const CTX_SIZE = process.env.LOCAL_GEMMA_CTX_SIZE || "65536";
 const THREADS = process.env.LOCAL_GEMMA_THREADS || "8";
-const DEFAULT_MAX_TOKENS = 8192; // Gemma 4 is a thinking model; needs headroom past its reasoning
+const FLASH_ATTN = process.env.LOCAL_GEMMA_FLASH_ATTN || "on";
+const BATCH_SIZE = process.env.LOCAL_GEMMA_BATCH_SIZE || "2048";
+const UBATCH_SIZE = process.env.LOCAL_GEMMA_UBATCH_SIZE || "512";
+const DEFAULT_MAX_TOKENS = parseInt(process.env.LOCAL_GEMMA_MAX_TOKENS || "8192", 10); // Gemma 4 is a thinking model; needs headroom past its reasoning
 
 let serverProcess = null;
 let serverStarting = null;
@@ -54,6 +80,12 @@ async function ensureServerRunning() {
   }
 
   serverStarting = (async () => {
+    if (!fs.existsSync(MODEL_PATH)) {
+      throw new Error(
+        `Model file not found at ${MODEL_PATH}. Run 'scripts/benchmark-and-configure.sh' to benchmark and configure models.`
+      );
+    }
+
     serverProcess = spawn(
       "llama-server",
       [
@@ -63,7 +95,9 @@ async function ensureServerRunning() {
         "--n-gpu-layers", N_GPU_LAYERS,
         "--threads", THREADS,
         "--ctx-size", CTX_SIZE,
-        "--flash-attn", "on",
+        "--flash-attn", FLASH_ATTN,
+        "--batch-size", BATCH_SIZE,
+        "--ubatch-size", UBATCH_SIZE,
       ],
       { stdio: ["ignore", "ignore", "pipe"], detached: false }
     );
