@@ -11,6 +11,7 @@ declare -A MODEL_URLS=(
   ["gemma-2b-q4_k_m"]="https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf"
   ["gemma-9b-q4_k_m"]="https://huggingface.co/bartowski/gemma-2-9b-it-GGUF/resolve/main/gemma-2-9b-it-Q4_K_M.gguf"
   ["gemma-4-12b-qat-q4_0"]="https://huggingface.co/google/gemma-4-12b-it-qat-q4_0-gguf/resolve/main/gemma-4-12b-it-qat-q4_0.gguf"
+  ["gemma-4-31b-qat-q4_0"]="https://huggingface.co/google/gemma-4-31B-it-qat-q4_0-gguf/resolve/main/gemma-4-31B_q4_0-it.gguf"
   ["gemma-27b-q4_k_m"]="https://huggingface.co/bartowski/gemma-2-27b-it-GGUF/resolve/main/gemma-2-27b-it-Q4_K_M.gguf"
   ["gemma-27b-q8_0"]="https://huggingface.co/bartowski/gemma-2-27b-it-GGUF/resolve/main/gemma-2-27b-it-Q8_0.gguf"
 )
@@ -19,6 +20,7 @@ declare -A MODEL_FILENAMES=(
   ["gemma-2b-q4_k_m"]="gemma-2-2b-it-Q4_K_M.gguf"
   ["gemma-9b-q4_k_m"]="gemma-2-9b-it-Q4_K_M.gguf"
   ["gemma-4-12b-qat-q4_0"]="gemma-4-12b-it-qat-q4_0.gguf"
+  ["gemma-4-31b-qat-q4_0"]="gemma-4-31B_q4_0-it.gguf"
   ["gemma-27b-q4_k_m"]="gemma-2-27b-it-Q4_K_M.gguf"
   ["gemma-27b-q8_0"]="gemma-2-27b-it-Q8_0.gguf"
 )

@@ -40,7 +40,7 @@ Before running the workflow on a new laptop, run the benchmark and configuration
 - **Entry (≤8GB Unified RAM)**: Gemma 2B / 4B Q4_K_M (16K context, 4 threads)
 - **Mid-Range (16GB–24GB Unified RAM)**: Gemma 4 12B Q4_0 / 9B Q4_K_M (32K context)
 - **High Performance (32GB–48GB Unified RAM)**: Gemma 4 12B Q4_0 (64K context, 8 Performance cores)
-- **Workstation (≥64GB Unified RAM)**: Gemma 27B Q8_0 (64K–128K context)
+- **Workstation (≥64GB Unified RAM)**: Gemma 4 31B QAT Q4_0 (64K context)
 
 ## Registered Frontends
 - **Claude Code**: `~/.claude.json`
@@ -60,4 +60,3 @@ In your agent frontend (e.g. Claude Code):
   ```text
   /local-implement <task description>
   ```
-

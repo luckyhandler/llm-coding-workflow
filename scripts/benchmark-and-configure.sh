@@ -141,9 +141,9 @@ elif [ "${RAM_GB}" -lt 56 ]; then
 else
   # 64GB+ Tier
   TIER="Workstation / Max Memory (>= 64GB Unified RAM)"
-  REC_MODEL_NAME="gemma-2-27b-it-Q8_0"
-  REC_MODEL_FILE="gemma-2-27b-it-Q8_0.gguf"
-  REC_MODEL_KEY="gemma-27b-q8_0"
+  REC_MODEL_NAME="gemma-4-31B-it-qat-q4_0"
+  REC_MODEL_FILE="gemma-4-31B_q4_0-it.gguf"
+  REC_MODEL_KEY="gemma-4-31b-qat-q4_0"
   REC_CTX_SIZE=65536
   REC_BATCH_SIZE=4096
   REC_UBATCH_SIZE=1024
