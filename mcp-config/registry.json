@@ -1,0 +1,109 @@
+{
+  "$schema": "./registry.schema.json",
+  "version": 1,
+  "defaults": {
+    "clients": [
+      "antigravity",
+      "claude",
+      "codex",
+      "cursor",
+      "hermes",
+      "opencode",
+      "vscode"
+    ]
+  },
+  "servers": {
+    "asana": {
+      "transport": "http",
+      "url": "https://mcp.asana.com/v2/mcp",
+      "auth": "oauth",
+      "imported_from": ["cursor"]
+    },
+    "atlassian": {
+      "transport": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "auth": "oauth",
+      "imported_from": ["vscode"]
+    },
+    "bigquery": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@toolbox-sdk/server@>=0.26.0",
+        "--prebuilt",
+        "bigquery",
+        "--stdio"
+      ],
+      "env": {
+        "BIGQUERY_LOCATION": "",
+        "BIGQUERY_PROJECT": "uryde-b0423"
+      },
+      "imported_from": ["antigravity"]
+    },
+    "context7": {
+      "transport": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "auth": "none",
+      "imported_from": ["codex", "cursor", "vscode"]
+    },
+    "dart": {
+      "transport": "stdio",
+      "command": "dart",
+      "args": ["mcp-server"],
+      "imported_from": ["antigravity", "vscode"]
+    },
+    "figma": {
+      "transport": "http",
+      "url": "https://mcp.figma.com/mcp",
+      "auth": "oauth",
+      "imported_from": ["codex", "cursor", "vscode"]
+    },
+    "firebase": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "firebase-tools@latest", "mcp"],
+      "imported_from": ["antigravity"]
+    },
+    "github": {
+      "transport": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "auth": "oauth",
+      "bearer_token_env_var": "GITHUB_PAT_TOKEN",
+      "imported_from": ["claude", "codex", "vscode"]
+    },
+    "jetbrains": {
+      "transport": "sse",
+      "url": "http://localhost:64342/sse",
+      "auth": "none",
+      "clients": ["claude", "cursor"],
+      "imported_from": ["claude"]
+    },
+    "local-gemma": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"
+      ],
+      "imported_from": ["claude", "codex"]
+    },
+    "mempalace": {
+      "transport": "stdio",
+      "command": "mempalace-mcp",
+      "args": [],
+      "imported_from": ["codex", "vscode"]
+    },
+    "miro": {
+      "transport": "http",
+      "url": "https://mcp.miro.com/",
+      "auth": "oauth",
+      "imported_from": ["vscode"]
+    },
+    "openai-developer-docs": {
+      "transport": "http",
+      "url": "https://developers.openai.com/mcp",
+      "auth": "none",
+      "imported_from": ["codex"]
+    }
+  }
+}
