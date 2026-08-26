@@ -138,16 +138,36 @@ elif [ "${RAM_GB}" -lt 56 ]; then
   REC_BATCH_SIZE=2048
   REC_UBATCH_SIZE=512
   REC_MAX_TOKENS=8192
+  REC_CACHE_TYPE_K="q8_0"
+  REC_CACHE_TYPE_V="q8_0"
 else
   # 64GB+ Tier
   TIER="Workstation / Max Memory (>= 64GB Unified RAM)"
-  REC_MODEL_NAME="gemma-2-27b-it-Q8_0"
-  REC_MODEL_FILE="gemma-2-27b-it-Q8_0.gguf"
-  REC_MODEL_KEY="gemma-27b-q8_0"
-  REC_CTX_SIZE=65536
+  if [ -f "${MODELS_DIR}/gemma-4-31B_q4_0-it.gguf" ]; then
+    REC_MODEL_NAME="gemma-4-31B-it-qat-q4_0"
+    REC_MODEL_FILE="gemma-4-31B_q4_0-it.gguf"
+    REC_MODEL_KEY="gemma-4-31b-qat-q4_0"
+  else
+    REC_MODEL_NAME="gemma-4-31B-it-qat-q4_0"
+    REC_MODEL_FILE="gemma-4-31B_q4_0-it.gguf"
+    REC_MODEL_KEY="gemma-4-31b-qat-q4_0"
+  fi
+  REC_CTX_SIZE=131072
   REC_BATCH_SIZE=4096
   REC_UBATCH_SIZE=1024
   REC_MAX_TOKENS=16384
+  REC_CACHE_TYPE_K="q8_0"
+  REC_CACHE_TYPE_V="q8_0"
+fi
+
+# If a model exists in .env and is present on disk, keep it
+if [ -f "${ENV_FILE}" ]; then
+  EXISTING_MODEL_PATH="$(grep "^LOCAL_GEMMA_MODEL_PATH=" "${ENV_FILE}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || true)"
+  EXISTING_MODEL_NAME="$(grep "^LOCAL_GEMMA_MODEL_NAME=" "${ENV_FILE}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' || true)"
+  if [ -n "${EXISTING_MODEL_PATH}" ] && [ -f "${REPO_ROOT}/${EXISTING_MODEL_PATH}" ]; then
+    REC_MODEL_PATH="${EXISTING_MODEL_PATH}"
+    [ -n "${EXISTING_MODEL_NAME}" ] && REC_MODEL_NAME="${EXISTING_MODEL_NAME}"
+  fi
 fi
 
 # Threads: Set to Performance Core count to prevent efficiency core scheduling jitter
@@ -156,7 +176,7 @@ REC_GPU_LAYERS=99
 REC_FLASH_ATTN="on"
 REC_HOST="127.0.0.1"
 REC_PORT="8090"
-REC_MODEL_PATH="models/${REC_MODEL_FILE}"
+[ -z "${REC_MODEL_PATH:-}" ] && REC_MODEL_PATH="models/${REC_MODEL_FILE}"
 
 echo "Recommended Profile: ${TIER}"
 echo "  - Recommended Model:     ${REC_MODEL_NAME} (${REC_MODEL_PATH})"
@@ -164,6 +184,7 @@ echo "  - Context Size (ctx):     ${REC_CTX_SIZE} tokens"
 echo "  - Worker Threads:         ${REC_THREADS} (tuned to Performance cores)"
 echo "  - GPU Metal Layers:       ${REC_GPU_LAYERS} (full offload)"
 echo "  - Flash Attention:        ${REC_FLASH_ATTN}"
+echo "  - KV Cache Quantization:  K=${REC_CACHE_TYPE_K}, V=${REC_CACHE_TYPE_V}"
 echo "  - Batch / UBatch:         ${REC_BATCH_SIZE} / ${REC_UBATCH_SIZE}"
 echo "  - Output Max Tokens:      ${REC_MAX_TOKENS}"
 echo "============================================================"
@@ -245,6 +266,8 @@ LOCAL_GEMMA_GPU_LAYERS=${REC_GPU_LAYERS}
 LOCAL_GEMMA_CTX_SIZE=${REC_CTX_SIZE}
 LOCAL_GEMMA_THREADS=${REC_THREADS}
 LOCAL_GEMMA_FLASH_ATTN=${REC_FLASH_ATTN}
+LOCAL_GEMMA_CACHE_TYPE_K=${REC_CACHE_TYPE_K}
+LOCAL_GEMMA_CACHE_TYPE_V=${REC_CACHE_TYPE_V}
 LOCAL_GEMMA_BATCH_SIZE=${REC_BATCH_SIZE}
 LOCAL_GEMMA_UBATCH_SIZE=${REC_UBATCH_SIZE}
 

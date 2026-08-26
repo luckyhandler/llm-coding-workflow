@@ -29,6 +29,8 @@ THREADS="${LOCAL_GEMMA_THREADS:-8}"
 BATCH_SIZE="${LOCAL_GEMMA_BATCH_SIZE:-2048}"
 UBATCH_SIZE="${LOCAL_GEMMA_UBATCH_SIZE:-512}"
 FLASH_ATTN="${LOCAL_GEMMA_FLASH_ATTN:-on}"
+CACHE_TYPE_K="${LOCAL_GEMMA_CACHE_TYPE_K:-}"
+CACHE_TYPE_V="${LOCAL_GEMMA_CACHE_TYPE_V:-}"
 
 if curl --noproxy "*" -s -f "${URL}/health" >/dev/null 2>&1; then
   echo "llama-server already running at ${URL}"
@@ -41,17 +43,28 @@ if [ ! -f "${MODEL_PATH}" ]; then
   exit 1
 fi
 
+CMD=(
+  llama-server
+  --model "${MODEL_PATH}"
+  --host "${HOST}"
+  --port "${PORT}"
+  --n-gpu-layers "${GPU_LAYERS}"
+  --ctx-size "${CTX_SIZE}"
+  --flash-attn "${FLASH_ATTN}"
+  --batch-size "${BATCH_SIZE}"
+  --ubatch-size "${UBATCH_SIZE}"
+  --threads "${THREADS}"
+)
+
+if [ -n "${CACHE_TYPE_K}" ]; then
+  CMD+=(--cache-type-k "${CACHE_TYPE_K}")
+fi
+if [ -n "${CACHE_TYPE_V}" ]; then
+  CMD+=(--cache-type-v "${CACHE_TYPE_V}")
+fi
+
 echo "Starting llama-server on ${URL} with model: ${MODEL_PATH}..."
-nohup llama-server \
-  --model "${MODEL_PATH}" \
-  --host "${HOST}" \
-  --port "${PORT}" \
-  --n-gpu-layers "${GPU_LAYERS}" \
-  --ctx-size "${CTX_SIZE}" \
-  --flash-attn "${FLASH_ATTN}" \
-  --batch-size "${BATCH_SIZE}" \
-  --ubatch-size "${UBATCH_SIZE}" \
-  --threads "${THREADS}" > "${LOG_FILE}" 2>&1 &
+nohup "${CMD[@]}" > "${LOG_FILE}" 2>&1 &
 
 for i in {1..30}; do
   if curl --noproxy "*" -s -f "${URL}/health" >/dev/null 2>&1; then

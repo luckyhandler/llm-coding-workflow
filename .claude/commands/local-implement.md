@@ -6,4 +6,5 @@ The user wants to implement/edit: "$ARGUMENTS"
 
 1. Structure the required code changes or boilerplate.
 2. Call the `implement_with_local_model` MCP tool to generate the implementation.
-3. Write the resulting files to disk and verify correctness.
+3. Inspect the returned `<local_model_thinking>` block and verify correctness.
+4. Write the resulting files to disk and verify functionality.

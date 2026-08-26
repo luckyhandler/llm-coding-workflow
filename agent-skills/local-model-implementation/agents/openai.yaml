@@ -1,0 +1,13 @@
+interface:
+  display_name: "Local Model Implementation"
+  short_description: "Offload implementation to local Gemma"
+  default_prompt: "Use $local-model-implementation to implement this planned change with local Gemma."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "local-gemma"
+      description: "Local Gemma implementation worker"
+
+policy:
+  allow_implicit_invocation: true

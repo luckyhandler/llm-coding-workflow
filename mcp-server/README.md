@@ -7,7 +7,7 @@ Claude Code, Codex CLI, etc. — without locking you into one vendor.
 ## Tools
 
 - **implement_with_local_model** — send an implementation task/prompt to the
-  local model. Auto-starts `llama-server` if it isn't already running.
+  local model. Emits the model's internal reasoning inside `<local_model_thinking>` tags before the code files. Auto-starts `llama-server` if it isn't already running.
 - **local_model_status** — check if the llama-server is up.
 
 ## Setup

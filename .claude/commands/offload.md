@@ -16,7 +16,8 @@ Follow this strict multi-tier protocol:
    - Do NOT write boilerplate code yourself — offload it to `implement_with_local_model`.
 
 3. **Integrate & Review**:
+   - Inspect the worker's emitted `<local_model_thinking>` block to review its internal reasoning, trade-offs, and assumptions.
    - Apply the local model's output to the workspace files.
    - Critique and inspect the implementation for bugs, edge cases, and typing.
    - Run tests / build checks.
-   - Present a concise summary of changes and validation results.
+   - Present a concise summary of changes, reasoning insights, and validation results.

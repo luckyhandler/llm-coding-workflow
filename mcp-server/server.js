@@ -55,6 +55,8 @@ const THREADS = process.env.LOCAL_GEMMA_THREADS || "8";
 const FLASH_ATTN = process.env.LOCAL_GEMMA_FLASH_ATTN || "on";
 const BATCH_SIZE = process.env.LOCAL_GEMMA_BATCH_SIZE || "2048";
 const UBATCH_SIZE = process.env.LOCAL_GEMMA_UBATCH_SIZE || "512";
+const CACHE_TYPE_K = process.env.LOCAL_GEMMA_CACHE_TYPE_K || "";
+const CACHE_TYPE_V = process.env.LOCAL_GEMMA_CACHE_TYPE_V || "";
 const DEFAULT_MAX_TOKENS = parseInt(process.env.LOCAL_GEMMA_MAX_TOKENS || "8192", 10); // Gemma 4 is a thinking model; needs headroom past its reasoning
 
 let serverProcess = null;
@@ -86,21 +88,29 @@ async function ensureServerRunning() {
       );
     }
 
-    serverProcess = spawn(
-      "llama-server",
-      [
-        "--model", MODEL_PATH,
-        "--host", HOST,
-        "--port", PORT,
-        "--n-gpu-layers", N_GPU_LAYERS,
-        "--threads", THREADS,
-        "--ctx-size", CTX_SIZE,
-        "--flash-attn", FLASH_ATTN,
-        "--batch-size", BATCH_SIZE,
-        "--ubatch-size", UBATCH_SIZE,
-      ],
-      { stdio: ["ignore", "ignore", "pipe"], detached: false }
-    );
+    const llamaArgs = [
+      "--model", MODEL_PATH,
+      "--host", HOST,
+      "--port", PORT,
+      "--n-gpu-layers", N_GPU_LAYERS,
+      "--threads", THREADS,
+      "--ctx-size", CTX_SIZE,
+      "--flash-attn", FLASH_ATTN,
+      "--batch-size", BATCH_SIZE,
+      "--ubatch-size", UBATCH_SIZE,
+    ];
+
+    if (CACHE_TYPE_K) {
+      llamaArgs.push("--cache-type-k", CACHE_TYPE_K);
+    }
+    if (CACHE_TYPE_V) {
+      llamaArgs.push("--cache-type-v", CACHE_TYPE_V);
+    }
+
+    serverProcess = spawn("llama-server", llamaArgs, {
+      stdio: ["ignore", "ignore", "pipe"],
+      detached: false,
+    });
 
     let lastStderr = "";
     serverProcess.stderr?.on("data", (chunk) => {
@@ -146,7 +156,7 @@ async function callLocalModel({ prompt, system, max_tokens, temperature }) {
   await ensureServerRunning();
 
   const defaultSystem =
-    "You are an expert coding assistant. Keep internal reasoning concise and focused purely on implementation details. Output clean, complete, robust code without unnecessary preamble.";
+    "You are an expert coding assistant. Solve the implementation task accurately. Output clean, complete, robust code without unnecessary preamble.";
 
   const messages = [];
   messages.push({ role: "system", content: system || defaultSystem });
@@ -170,17 +180,23 @@ async function callLocalModel({ prompt, system, max_tokens, temperature }) {
   const data = await res.json();
   const choice = data.choices?.[0];
   const content = choice?.message?.content ?? "";
+  const reasoning = choice?.message?.reasoning_content ?? choice?.message?.reasoning ?? "";
   const finishReason = choice?.finish_reason ?? "unknown";
   const usage = data.usage ?? {};
 
-  let result = content;
+  let result = "";
+  if (reasoning && reasoning.trim()) {
+    result += `<local_model_thinking>\n${reasoning.trim()}\n</local_model_thinking>\n\n`;
+  }
+  result += content;
+
   if (finishReason === "length") {
     result +=
       "\n\n[WARNING: output truncated by max_tokens before the model finished. " +
       "Re-run with a higher max_tokens, or ask for a smaller piece of work.]";
   }
 
-  return { result, finishReason, usage };
+  return { result, finishReason, usage, reasoning };
 }
 
 const server = new Server(
@@ -196,8 +212,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         "Send an implementation task to a locally-running Gemma 4 12B model (via llama.cpp, Apple Silicon Metal-accelerated). " +
         "Use this to offload code-writing / boilerplate / mechanical implementation work after you (the calling agent) " +
         "have already produced the plan or architecture. Do NOT use this for architectural decisions or planning — " +
-        "it is intended purely as a fast, free, local implementation worker. The model 'thinks' internally before " +
-        "responding, so allow enough max_tokens for both its reasoning and final output (default 8192).",
+        "it is intended purely as a fast, free, local implementation worker. The model emits its internal reasoning inside " +
+        "<local_model_thinking> tags before the implementation files, allowing the parent agent to review its thought process.",
       inputSchema: {
         type: "object",
         properties: {
@@ -250,7 +266,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (name === "implement_with_local_model") {
     try {
-      const { result, finishReason, usage } = await callLocalModel(args);
+      const { result, finishReason, usage, reasoning } = await callLocalModel(args);
       return {
         content: [
           {
@@ -258,7 +274,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             text: result,
           },
         ],
-        _meta: { finishReason, usage },
+        _meta: { finishReason, usage, reasoning },
       };
     } catch (err) {
       return {

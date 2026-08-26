@@ -11,6 +11,8 @@ models/*.safetensors
 # Cache directories
 models/.cache/
 *.cache/
+__pycache__/
+*.pyc
 
 # Node dependencies
 node_modules/

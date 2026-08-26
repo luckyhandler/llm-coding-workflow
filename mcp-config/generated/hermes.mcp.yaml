@@ -1,0 +1,49 @@
+# >>> global-mcp-registry (managed; do not edit)
+mcp_servers:
+  asana:
+    url: "https://mcp.asana.com/v2/mcp"
+    auth: oauth
+  atlassian:
+    url: "https://mcp.atlassian.com/v1/mcp"
+    auth: oauth
+  bigquery:
+    command: "npx"
+    args:
+      - "-y"
+      - "@toolbox-sdk/server@>=0.26.0"
+      - "--prebuilt"
+      - "bigquery"
+      - "--stdio"
+    env:
+      BIGQUERY_LOCATION: ""
+      BIGQUERY_PROJECT: "uryde-b0423"
+  context7:
+    url: "https://mcp.context7.com/mcp"
+  dart:
+    command: "dart"
+    args:
+      - "mcp-server"
+  figma:
+    url: "https://mcp.figma.com/mcp"
+    auth: oauth
+  firebase:
+    command: "npx"
+    args:
+      - "-y"
+      - "firebase-tools@latest"
+      - "mcp"
+  github:
+    url: "https://api.githubcopilot.com/mcp/"
+    auth: oauth
+  local-gemma:
+    command: "node"
+    args:
+      - "/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"
+  mempalace:
+    command: "mempalace-mcp"
+  miro:
+    url: "https://mcp.miro.com/"
+    auth: oauth
+  openai-developer-docs:
+    url: "https://developers.openai.com/mcp"
+# <<< global-mcp-registry

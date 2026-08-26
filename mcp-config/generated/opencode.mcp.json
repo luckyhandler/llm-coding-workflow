@@ -1,0 +1,95 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "asana": {
+      "enabled": true,
+      "type": "remote",
+      "url": "https://mcp.asana.com/v2/mcp"
+    },
+    "atlassian": {
+      "enabled": true,
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "bigquery": {
+      "command": [
+        "npx",
+        "-y",
+        "@toolbox-sdk/server@>=0.26.0",
+        "--prebuilt",
+        "bigquery",
+        "--stdio"
+      ],
+      "enabled": true,
+      "environment": {
+        "BIGQUERY_LOCATION": "",
+        "BIGQUERY_PROJECT": "uryde-b0423"
+      },
+      "type": "local"
+    },
+    "context7": {
+      "enabled": true,
+      "oauth": false,
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "dart": {
+      "command": [
+        "dart",
+        "mcp-server"
+      ],
+      "enabled": true,
+      "type": "local"
+    },
+    "figma": {
+      "enabled": true,
+      "type": "remote",
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "firebase": {
+      "command": [
+        "npx",
+        "-y",
+        "firebase-tools@latest",
+        "mcp"
+      ],
+      "enabled": true,
+      "type": "local"
+    },
+    "github": {
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_PAT_TOKEN}"
+      },
+      "oauth": false,
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "local-gemma": {
+      "command": [
+        "node",
+        "/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"
+      ],
+      "enabled": true,
+      "type": "local"
+    },
+    "mempalace": {
+      "command": [
+        "mempalace-mcp"
+      ],
+      "enabled": true,
+      "type": "local"
+    },
+    "miro": {
+      "enabled": true,
+      "type": "remote",
+      "url": "https://mcp.miro.com/"
+    },
+    "openai-developer-docs": {
+      "enabled": true,
+      "oauth": false,
+      "type": "remote",
+      "url": "https://developers.openai.com/mcp"
+    }
+  }
+}

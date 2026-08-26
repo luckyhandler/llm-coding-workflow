@@ -1,0 +1,62 @@
+{
+  "mcpServers": {
+    "asana": {
+      "httpUrl": "https://mcp.asana.com/v2/mcp"
+    },
+    "atlassian": {
+      "httpUrl": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "bigquery": {
+      "args": [
+        "-y",
+        "@toolbox-sdk/server@>=0.26.0",
+        "--prebuilt",
+        "bigquery",
+        "--stdio"
+      ],
+      "command": "npx",
+      "env": {
+        "BIGQUERY_LOCATION": "",
+        "BIGQUERY_PROJECT": "uryde-b0423"
+      }
+    },
+    "context7": {
+      "httpUrl": "https://mcp.context7.com/mcp"
+    },
+    "dart": {
+      "args": [
+        "mcp-server"
+      ],
+      "command": "dart"
+    },
+    "figma": {
+      "httpUrl": "https://mcp.figma.com/mcp"
+    },
+    "firebase": {
+      "args": [
+        "-y",
+        "firebase-tools@latest",
+        "mcp"
+      ],
+      "command": "npx"
+    },
+    "github": {
+      "httpUrl": "https://api.githubcopilot.com/mcp/"
+    },
+    "local-gemma": {
+      "args": [
+        "/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"
+      ],
+      "command": "node"
+    },
+    "mempalace": {
+      "command": "mempalace-mcp"
+    },
+    "miro": {
+      "httpUrl": "https://mcp.miro.com/"
+    },
+    "openai-developer-docs": {
+      "httpUrl": "https://developers.openai.com/mcp"
+    }
+  }
+}

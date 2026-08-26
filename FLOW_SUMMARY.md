@@ -38,9 +38,9 @@ Vendor-neutral setup for coding with Claude first-class models for planning + lo
    - Checks if `llama-server` on `:8090` is alive (health check)
    - If not → auto-spawns `llama-server --n-gpu-layers 99` (Metal offload)
    - Sends prompt to Gemma 4 via OpenAI-compatible `/v1/chat/completions`
-   - Returns raw code output back into the agent's context
+   - Returns reasoning (`<local_model_thinking>`) and code files back into the calling agent's context
 
-4. **Local model behavior:** Gemma 4 is a **thinking model** — it reasons internally before emitting code. Default `max_tokens=6000` covers reasoning + implementation. Watch for truncation (`finish_reason: length`) on large tasks → raise the limit.
+4. **Local model behavior:** Gemma 4 is a **thinking model** — it reasons internally before emitting code. The MCP server captures this reasoning and emits it in `<local_model_thinking>` tags so the primary agent can review the worker's thought process. Default `max_tokens=8192` covers reasoning + implementation. Watch for truncation (`finish_reason: length`) on large tasks → raise the limit.
 
 ## Usage
 
