@@ -37,6 +37,7 @@ bearer_token_env_var = "GITHUB_PAT_TOKEN"
 [mcp_servers.local-gemma]
 command = "node"
 args = ["/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"]
+timeout = 600
 
 [mcp_servers.mempalace]
 command = "mempalace-mcp"

@@ -71,6 +71,7 @@
         "/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"
       ],
       "enabled": true,
+      "timeout": 600,
       "type": "local"
     },
     "mempalace": {
