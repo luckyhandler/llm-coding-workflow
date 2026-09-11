@@ -141,18 +141,16 @@ elif [ "${RAM_GB}" -lt 56 ]; then
   REC_CACHE_TYPE_K="q8_0"
   REC_CACHE_TYPE_V="q8_0"
 else
-  # 64GB+ Tier
+  # 64GB+ Tier: Qwen3.8-27B (dense, hybrid linear attention). The GGUF embeds the
+  # model's MTP head, so draft-mtp speculative decoding needs no extra draft file
+  # (~1.9x decode speed on an M5 Max); ngram-mod adds ~1.5x on edits that echo
+  # the input files.
   TIER="Workstation / Max Memory (>= 64GB Unified RAM)"
-  if [ -f "${MODELS_DIR}/gemma-4-31B_q4_0-it.gguf" ]; then
-    REC_MODEL_NAME="gemma-4-31B-it-qat-q4_0"
-    REC_MODEL_FILE="gemma-4-31B_q4_0-it.gguf"
-    REC_MODEL_KEY="gemma-4-31b-qat-q4_0"
-  else
-    REC_MODEL_NAME="gemma-4-31B-it-qat-q4_0"
-    REC_MODEL_FILE="gemma-4-31B_q4_0-it.gguf"
-    REC_MODEL_KEY="gemma-4-31b-qat-q4_0"
-  fi
-  REC_CTX_SIZE=131072
+  REC_MODEL_NAME="qwen3.8-27b-ud-q6_k_xl"
+  REC_MODEL_FILE="Qwen3.8-27B-UD-Q6_K_XL.gguf"
+  REC_MODEL_KEY="qwen3.8-27b-q6_k_xl"
+  REC_SPEC_TYPE="ngram-mod,draft-mtp"
+  REC_CTX_SIZE=65536
   REC_BATCH_SIZE=4096
   REC_UBATCH_SIZE=1024
   REC_MAX_TOKENS=16384
@@ -167,19 +165,29 @@ if [ -f "${ENV_FILE}" ]; then
   if [ -n "${EXISTING_MODEL_PATH}" ] && [ -f "${REPO_ROOT}/${EXISTING_MODEL_PATH}" ]; then
     REC_MODEL_PATH="${EXISTING_MODEL_PATH}"
     [ -n "${EXISTING_MODEL_NAME}" ] && REC_MODEL_NAME="${EXISTING_MODEL_NAME}"
+    # Speculative decoding settings are specific to the recommended model.
+    if [ "${EXISTING_MODEL_PATH}" != "models/${REC_MODEL_FILE}" ]; then
+      REC_DRAFT_MODEL_FILE=""
+      REC_SPEC_TYPE=""
+    fi
   fi
 fi
 
 # Threads: Set to Performance Core count to prevent efficiency core scheduling jitter
 REC_THREADS="${P_CORES}"
 REC_GPU_LAYERS=99
+REC_PARALLEL=1
+REC_THINKING=false
 REC_FLASH_ATTN="on"
 REC_HOST="127.0.0.1"
 REC_PORT="8090"
 [ -z "${REC_MODEL_PATH:-}" ] && REC_MODEL_PATH="models/${REC_MODEL_FILE}"
+REC_DRAFT_MODEL_PATH=""
+[ -n "${REC_DRAFT_MODEL_FILE:-}" ] && REC_DRAFT_MODEL_PATH="models/${REC_DRAFT_MODEL_FILE}"
 
 echo "Recommended Profile: ${TIER}"
 echo "  - Recommended Model:     ${REC_MODEL_NAME} (${REC_MODEL_PATH})"
+[ -n "${REC_SPEC_TYPE:-}" ] && echo "  - Speculative Decoding:  ${REC_SPEC_TYPE}${REC_DRAFT_MODEL_PATH:+ (${REC_DRAFT_MODEL_PATH})}"
 echo "  - Context Size (ctx):     ${REC_CTX_SIZE} tokens"
 echo "  - Worker Threads:         ${REC_THREADS} (tuned to Performance cores)"
 echo "  - GPU Metal Layers:       ${REC_GPU_LAYERS} (full offload)"
@@ -232,6 +240,14 @@ if [ "${MODEL_EXISTS}" = false ] && [ "${DRY_RUN}" = false ]; then
   fi
 fi
 
+if [ -n "${REC_DRAFT_MODEL_PATH}" ] && [ ! -f "${REPO_ROOT}/${REC_DRAFT_MODEL_PATH}" ] && [ "${DRY_RUN}" = false ]; then
+  if [ "${AUTO_DOWNLOAD}" = true ]; then
+    bash "${SCRIPT_DIR}/download-model.sh" "${REC_DRAFT_MODEL_KEY}"
+  else
+    echo "  scripts/download-model.sh ${REC_DRAFT_MODEL_KEY}   # speculative-decoding draft head"
+  fi
+fi
+
 # Apply configuration
 if [ "${DRY_RUN}" = true ]; then
   echo ""
@@ -260,10 +276,13 @@ if [ "${SHOULD_WRITE}" = true ]; then
 # Model Settings
 LOCAL_GEMMA_MODEL_NAME=${REC_MODEL_NAME}
 LOCAL_GEMMA_MODEL_PATH=${REC_MODEL_PATH}
+LOCAL_GEMMA_DRAFT_MODEL_PATH=${REC_DRAFT_MODEL_PATH}
+LOCAL_GEMMA_SPEC_TYPE=${REC_SPEC_TYPE:-}
 
 # Hardware & Engine Tuning
 LOCAL_GEMMA_GPU_LAYERS=${REC_GPU_LAYERS}
 LOCAL_GEMMA_CTX_SIZE=${REC_CTX_SIZE}
+LOCAL_GEMMA_PARALLEL=${REC_PARALLEL}
 LOCAL_GEMMA_THREADS=${REC_THREADS}
 LOCAL_GEMMA_FLASH_ATTN=${REC_FLASH_ATTN}
 LOCAL_GEMMA_CACHE_TYPE_K=${REC_CACHE_TYPE_K}
@@ -277,6 +296,8 @@ LOCAL_GEMMA_PORT=${REC_PORT}
 
 # Inference Headroom
 LOCAL_GEMMA_MAX_TOKENS=${REC_MAX_TOKENS}
+LOCAL_GEMMA_THINKING=${REC_THINKING}
+LOCAL_GEMMA_REASONING_EFFORT=medium
 EOF
 
   echo "Successfully applied configuration to ${ENV_FILE}"

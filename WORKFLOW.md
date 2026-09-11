@@ -8,7 +8,7 @@ Claude Code / Opus / Codex / Hermes
   → architecture
   → review / critique
         ↓  (explicit /offload command)
-Local llama.cpp / Gemma 4 (via local-gemma MCP)
+Local llama.cpp model — Qwen3.8-27B / Gemma 4 (via local-gemma MCP)
   → implementation
   → code edits
 ```
@@ -27,7 +27,8 @@ To configure this environment on any Mac:
    - Agent ensures local `llama-server` is active (`scripts/ensure-llama-server.sh` or `http://127.0.0.1:8090/health`).
    - Agent creates architecture & module specification (signatures/interfaces only).
    - Agent MUST invoke `implement_with_local_model` via the `local-gemma` MCP server (strictly prohibited from generating code bodies in response or via subagents).
-   - Local Gemma 4 synthesizes internal reasoning (`<local_model_thinking>`) and the implementation.
+   - Agent passes the relevant existing files via the tool's `files` argument; thinking stays off unless the unit is algorithmically tricky.
+   - The local model synthesizes the implementation (plus `<local_model_thinking>` reasoning when thinking is enabled).
    - Agent receives output, inspects reasoning, writes files to disk, and critiques/tests.
 
 

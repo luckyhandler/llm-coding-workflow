@@ -13,6 +13,10 @@ declare -A MODEL_URLS=(
   ["gemma-4-12b-qat-q4_0"]="https://huggingface.co/google/gemma-4-12b-it-qat-q4_0-gguf/resolve/main/gemma-4-12b-it-qat-q4_0.gguf"
   ["gemma-27b-q4_k_m"]="https://huggingface.co/bartowski/gemma-2-27b-it-GGUF/resolve/main/gemma-2-27b-it-Q4_K_M.gguf"
   ["gemma-27b-q8_0"]="https://huggingface.co/bartowski/gemma-2-27b-it-GGUF/resolve/main/gemma-2-27b-it-Q8_0.gguf"
+  ["qwen3.8-27b-q4_k_xl"]="https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf"
+  ["qwen3.8-27b-q5_k_xl"]="https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q5_K_XL.gguf"
+  ["qwen3.8-27b-q6_k_xl"]="https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q6_K_XL.gguf"
+  ["qwen3.8-27b-mtp"]="https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/MTP/mtp-Qwen3.8-27B-Q4_0.gguf"
 )
 
 declare -A MODEL_FILENAMES=(
@@ -21,6 +25,10 @@ declare -A MODEL_FILENAMES=(
   ["gemma-4-12b-qat-q4_0"]="gemma-4-12b-it-qat-q4_0.gguf"
   ["gemma-27b-q4_k_m"]="gemma-2-27b-it-Q4_K_M.gguf"
   ["gemma-27b-q8_0"]="gemma-2-27b-it-Q8_0.gguf"
+  ["qwen3.8-27b-q4_k_xl"]="Qwen3.8-27B-UD-Q4_K_XL.gguf"
+  ["qwen3.8-27b-q5_k_xl"]="Qwen3.8-27B-UD-Q5_K_XL.gguf"
+  ["qwen3.8-27b-q6_k_xl"]="Qwen3.8-27B-UD-Q6_K_XL.gguf"
+  ["qwen3.8-27b-mtp"]="mtp-Qwen3.8-27B-Q4_0.gguf"
 )
 
 MODEL_KEY="${1:-}"

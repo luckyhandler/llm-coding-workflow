@@ -69,7 +69,7 @@ Claude Code / Opus / Codex / Hermes
   → architecture
   → review / critique
         ↓  (explicit /offload command)
-Local llama.cpp / Gemma 4 (via local-gemma MCP)
+Local llama.cpp model — Qwen3.8-27B or Gemma 4 (via local-gemma MCP)
   → implementation
   → code edits
 ```
@@ -77,15 +77,17 @@ Local llama.cpp / Gemma 4 (via local-gemma MCP)
 ## Setup & Integration
 
 The `local-gemma` MCP server (`mcp-server/server.js`) exposes:
-- `implement_with_local_model`: Generates code locally on Gemma 4, emitting thinking/reasoning inside `<local_model_thinking>` tags (auto-boots `llama-server` on Apple Silicon Metal GPU).
-- `local_model_status`: Checks health of local server.
+- `implement_with_local_model`: Generates code with the configured local model (auto-boots `llama-server` on the Apple Silicon Metal GPU via `scripts/ensure-llama-server.sh`). Pass existing files via `files` so the worker sees real APIs; thinking is off by default (`thinking: true` enables it and returns the reasoning inside `<local_model_thinking>` tags). Output is streamed, so long generations are not cut off by HTTP timeouts.
+- `local_model_status`: Checks health of the local server and which model it has loaded.
+
+MCP clients enforce their own tool-call timeouts. The local worker can take several minutes, so registrations set 30 minutes: Claude Code `"timeout": 1800000` (milliseconds; values below 1000 are ignored), Codex `tool_timeout_sec = 1800`.
 
 ## Hardware Profiling & Setup (Mac)
 
 Before running the workflow on a new laptop, run the benchmark and configuration profiler:
 
 ```bash
-# Detect hardware and view recommended Gemma model and flags
+# Detect hardware and view recommended model and flags
 ./scripts/benchmark-and-configure.sh --dry-run
 
 # Automatically apply optimal settings to .env
@@ -99,7 +101,9 @@ Before running the workflow on a new laptop, run the benchmark and configuration
 - **Entry (≤8GB Unified RAM)**: Gemma 2B / 4B Q4_K_M (16K context, 4 threads)
 - **Mid-Range (16GB–24GB Unified RAM)**: Gemma 4 12B Q4_0 / 9B Q4_K_M (32K context)
 - **High Performance (32GB–48GB Unified RAM)**: Gemma 4 12B Q4_0 (64K context, 8 Performance cores)
-- **Workstation (≥64GB Unified RAM)**: Gemma 27B Q8_0 (64K–128K context)
+- **Workstation (≥64GB Unified RAM)**: Qwen3.8-27B UD-Q6_K_XL with `ngram-mod,draft-mtp` speculative decoding using the model's embedded MTP head (64K context; ~28–45 tok/s on an M5 Max)
+
+After changing `.env`, run `./scripts/ensure-llama-server.sh --restart` so a running server picks up the new settings.
 
 ## Registered frontends
 - **Claude Code**: `~/.claude.json`

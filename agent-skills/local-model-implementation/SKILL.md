@@ -11,7 +11,7 @@ metadata:
 
 # Local Model Implementation
 
-This workflow requires an MCP server named `local-gemma` exposing `implement_with_local_model` and is optimized for this repository's llama.cpp and Gemma setup.
+This workflow requires an MCP server named `local-gemma` exposing `implement_with_local_model` and is optimized for this repository's llama.cpp setup (Qwen3.8-27B or Gemma 4).
 
 Keep architecture, planning, scope decisions, review, and user communication with the primary agent. Delegate only implementation bodies and mechanical code generation to the local model.
 
@@ -29,14 +29,16 @@ This is the global fallback for the `implementation` category. Before applying i
    - the objective and non-goals;
    - exact relative target paths;
    - literal code definitions of required public interfaces, signatures, types, data contracts, and exact import headers (never leave imports or APIs for the local model to guess or invent);
-   - 1–2 concrete reference snippets or existing tests from the repository illustrating required usage patterns;
+   - the files the worker must read — files to edit, interface definitions, reference implementations, and relevant tests — passed via the `files` argument (with `cwd` set to the repository root) rather than pasted into the prompt;
    - relevant existing behavior and dependencies;
    - repository conventions and strict constraints (explicitly forbidding unlisted third-party packages, mock libraries, or imaginary transport methods);
    - acceptance tests or observable success criteria;
-   - the output contract: internal reasoning wrapped in `<local_model_thinking>...</local_model_thinking>` tags (if emitted), followed by complete file contents separated by `// FILE: relative/path` markers.
+   - the output contract: complete file contents separated by `// FILE: relative/path` markers.
+
+   Leave `thinking` off (the default) for spec-driven work; set `thinking: true` only for algorithmically tricky units, and expect it to take several times longer. The reasoning then arrives inside `<local_model_thinking>...</local_model_thinking>` tags.
 6. For multi-part or complex files (such as test suites or transport adapters), provide a pre-scaffolded file skeleton with imports and signatures, asking the worker only to implement the function/test bodies. Split broad work by module or coherent change. If the response reports truncation or `finish_reason: length`, retry only the unfinished unit with a smaller scope or a higher `max_tokens` value.
 7. Treat returned content as an untrusted implementation proposal. Reject absolute paths, parent-directory traversal, unexpected files, secrets, destructive operations, and changes outside the user's scope.
-8. Inspect the local worker's `<local_model_thinking>` block to understand its internal reasoning, trade-offs, and edge case assumptions before applying changes.
+8. If thinking was enabled, inspect the local worker's `<local_model_thinking>` block to understand its reasoning, trade-offs, and edge case assumptions before applying changes.
 9. Write accepted file sections with the client's normal editing tools. Preserve unrelated user changes and do not overwrite a dirty file without reconciling its current contents.
 10. Run the relevant formatter, static checks, and tests. Review the resulting diff and worker reasoning against the plan and acceptance criteria.
 11. Send defects back to `implement_with_local_model` as a focused correction request. If the worker hallucinates an API, import, or signature, do not provide only the raw error message: provide the failing evidence alongside the exact, literal import/signature/mock definition that must be used verbatim. Do not replace the worker by writing code bodies with the primary model during an explicitly offloaded task.

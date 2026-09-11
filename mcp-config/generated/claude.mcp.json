@@ -60,7 +60,7 @@
         "/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"
       ],
       "command": "node",
-      "timeout": 600,
+      "timeout": 1800000,
       "type": "stdio"
     },
     "mempalace": {
