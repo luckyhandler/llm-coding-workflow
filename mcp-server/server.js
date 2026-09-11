@@ -391,8 +391,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           thinking: {
             type: "boolean",
             description:
-              "Enable the model's reasoning phase for each agent step. Much slower — one step can take 10+ minutes on " +
-              "hard problems — and iterating on the check is usually cheaper. Default false.",
+              "Enable the model's reasoning phase for each agent step. Much slower — one step can take 10–30 minutes on " +
+              "hard problems, so raise max_minutes with it — and iterating on the check is usually cheaper. Default false.",
           },
           reasoning_effort: {
             type: "string",

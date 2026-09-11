@@ -116,5 +116,7 @@ applies to any model.
 
 - Keep thinking off for spec-driven work: the calling agent already did the reasoning, and
   thinking multiplies generated tokens several times over. With `delegate_task` the agent can
-  iterate on a failing check instead, which usually beats thinking harder up front.
+  iterate on a failing check instead, which usually beats thinking harder up front. For genuinely
+  hard algorithmic units thinking can succeed where iteration loops (measured: 34/34 tests after
+  34 minutes, versus 27/34 at the step limit without thinking), so pair it with a larger `max_minutes`.
 - Delegations take minutes, not seconds. Scope tasks so that `check` can verify them.

@@ -29,7 +29,7 @@ This is the global fallback for the `implementation` category. Before applying i
    - `task`: a brief containing the goal and non-goals; starting points (files, symbols, similar existing code to follow); constraints (APIs, dependencies that may or may not be used, conventions); and what done means;
    - `cwd`: the absolute repository root;
    - `check`: the command that proves the unit works (write or name the test first when none exists);
-   - `thinking: true` only for algorithmically tricky units — iterating on a failing check is usually the cheaper fix.
+   - `thinking: true` only for algorithmically tricky units — iterating on a failing check is usually the cheaper fix. Thinking runs can exceed half an hour, so raise `max_minutes` (e.g. 45) with it.
 6. Read the summary. It reports the outcome, the check result, changed files with line counts, the agent's notes, an undo command, and a `session_id`.
 7. Review proportionally to risk, not exhaustively:
    - check PASS and the changed files match the expected scope → spot-check with `git diff -- <file>` where correctness is subtle (security, concurrency, public APIs, migrations);
