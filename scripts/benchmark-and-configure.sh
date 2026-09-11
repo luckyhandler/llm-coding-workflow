@@ -150,7 +150,9 @@ else
   REC_MODEL_FILE="Qwen3.8-27B-UD-Q6_K_XL.gguf"
   REC_MODEL_KEY="qwen3.8-27b-q6_k_xl"
   REC_SPEC_TYPE="ngram-mod,draft-mtp"
-  REC_CTX_SIZE=65536
+  # Only 1 in 4 layers uses full attention, so a 128K KV cache stays small; the
+  # delegate_task agent accumulates tool output and benefits from the headroom.
+  REC_CTX_SIZE=131072
   REC_BATCH_SIZE=4096
   REC_UBATCH_SIZE=1024
   REC_MAX_TOKENS=16384
@@ -298,6 +300,9 @@ LOCAL_GEMMA_PORT=${REC_PORT}
 LOCAL_GEMMA_MAX_TOKENS=${REC_MAX_TOKENS}
 LOCAL_GEMMA_THINKING=${REC_THINKING}
 LOCAL_GEMMA_REASONING_EFFORT=medium
+
+# delegate_task agent (OpenCode)
+LOCAL_AGENT_MAX_MINUTES=30
 EOF
 
   echo "Successfully applied configuration to ${ENV_FILE}"

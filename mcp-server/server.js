@@ -5,6 +5,11 @@
  * (The "gemma" name is historical — the server works with any GGUF model that
  * llama-server can load, e.g. Qwen3.8 or Gemma 4.)
  *
+ * Tools:
+ * - delegate_task: runs a local coding agent (OpenCode) in a git repository and
+ *   returns a compact summary, so the calling agent saves its own tokens.
+ * - implement_with_local_model: one-shot generation that returns code.
+ *
  * Auto-starts llama-server on first use via scripts/ensure-llama-server.sh, so
  * callers (Claude Code, Codex, any MCP client) don't need to manage the process.
  * Responses are streamed from llama-server so long generations never hit an
@@ -21,9 +26,11 @@ import {
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { delegateTask } from "./delegate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -57,6 +64,14 @@ const DEFAULT_THINKING = /^(1|true|on|yes)$/i.test(process.env.LOCAL_GEMMA_THINK
 const DEFAULT_REASONING_EFFORT = process.env.LOCAL_GEMMA_REASONING_EFFORT || "medium";
 const MAX_FILE_BYTES = parseInt(process.env.LOCAL_GEMMA_MAX_FILE_BYTES || "262144", 10);
 const PROGRESS_INTERVAL_MS = 5000;
+const CTX_SIZE = parseInt(process.env.LOCAL_GEMMA_CTX_SIZE || "65536", 10);
+const AGENT_CONFIG = path.join(REPO_ROOT, "agent-worker", "opencode.json");
+const AGENT_STATE_DIR = (process.env.LOCAL_AGENT_STATE_DIR || path.join(os.homedir(), ".local", "state", "local-gemma-agent")).replace(
+  /^~(?=\/)/,
+  os.homedir()
+);
+const AGENT_MAX_MINUTES = Number(process.env.LOCAL_AGENT_MAX_MINUTES || "30");
+const OPENCODE_BIN = process.env.LOCAL_AGENT_OPENCODE_BIN || "opencode";
 
 const execFileAsync = promisify(execFile);
 
@@ -303,23 +318,107 @@ async function callLocalModel(args, extra) {
   return { result, finishReason, usage, timings, reasoning };
 }
 
+// One delegation at a time: they share the single llama-server slot and may touch the same repository.
+let delegationQueue = Promise.resolve();
+
+async function runDelegation(args, extra) {
+  await ensureServerRunning();
+  const progressToken = extra?._meta?.progressToken;
+  const { summary, outcome, checkResult } = await delegateTask(
+    {
+      task: args.task,
+      cwd: args.cwd,
+      check: args.check,
+      thinking: args.thinking ?? DEFAULT_THINKING,
+      reasoningEffort: args.reasoning_effort ?? DEFAULT_REASONING_EFFORT,
+      maxMinutes: args.max_minutes ?? AGENT_MAX_MINUTES,
+      sessionId: args.session_id,
+    },
+    {
+      opencodeBin: OPENCODE_BIN,
+      configPath: AGENT_CONFIG,
+      stateDir: AGENT_STATE_DIR,
+      baseUrl: `${BASE_URL}/v1`,
+      ctxSize: CTX_SIZE,
+      sampling: samplingPreset,
+      signal: extra?.signal,
+      onProgress:
+        progressToken == null
+          ? undefined
+          : (message, progress) =>
+              extra
+                .sendNotification({ method: "notifications/progress", params: { progressToken, progress, message } })
+                .catch(() => {}),
+    }
+  );
+  return { summary, outcome, checkPassed: checkResult?.passed ?? null };
+}
+
 const server = new Server(
-  { name: "local-gemma-mcp", version: "2.0.0" },
+  { name: "local-gemma-mcp", version: "3.0.0" },
   { capabilities: { tools: {} } }
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
+      name: "delegate_task",
+      description:
+        `Delegate a well-scoped coding task to a local agent (OpenCode driving ${MODEL_NAME} via llama.cpp) that works ` +
+        "directly in the repository: it navigates with LSP and grep, reads files, edits, and runs commands until the " +
+        "check passes. You get back a compact summary (outcome, check result, changed files with line counts, the " +
+        "agent's notes, an undo command) instead of code — this is the token-saving way to offload work. Write the " +
+        "task as a brief: goal, constraints, starting points (files/symbols), and what done means. Review with " +
+        "`git diff` only where needed. Runs take minutes; do not use for design decisions or ambiguous work.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          task: {
+            type: "string",
+            description:
+              "The brief for the local agent: goal, constraints/non-goals, starting points (files, symbols), and acceptance criteria.",
+          },
+          cwd: {
+            type: "string",
+            description: "Absolute path of the directory to work in; must be inside a git repository with at least one commit.",
+          },
+          check: {
+            type: "string",
+            description:
+              "Shell command that verifies the work (e.g. `npm test -- auth`). The agent iterates until it passes; the " +
+              "server runs it again afterwards and reports the result.",
+          },
+          thinking: {
+            type: "boolean",
+            description:
+              "Enable the model's reasoning phase for each agent step. Much slower — one step can take 10+ minutes on " +
+              "hard problems — and iterating on the check is usually cheaper. Default false.",
+          },
+          reasoning_effort: {
+            type: "string",
+            enum: ["low", "medium", "high"],
+            description: `Reasoning depth when thinking is on. Default ${DEFAULT_REASONING_EFFORT}.`,
+          },
+          max_minutes: {
+            type: "number",
+            description: `Time budget after which the agent is stopped and partial results are reported. Default ${AGENT_MAX_MINUTES}.`,
+          },
+          session_id: {
+            type: "string",
+            description: "Continue a previous delegation's agent session (from its summary) for follow-up fixes with context kept.",
+          },
+        },
+        required: ["task", "cwd"],
+      },
+    },
+    {
       name: "implement_with_local_model",
       description:
-        `Send an implementation task to a locally-running model (${MODEL_NAME} via llama.cpp, Apple Silicon Metal-accelerated). ` +
-        "Use this to offload code-writing / boilerplate / mechanical implementation work after you (the calling agent) " +
-        "have already produced the plan or architecture. Do NOT use this for architectural decisions or planning — " +
-        "it is intended purely as a fast, free, local implementation worker. Pass the files the worker must read or " +
-        "follow via `files` instead of pasting them into the prompt. Thinking is off by default; enable it only for " +
-        "algorithmically tricky units. When thinking is on, the model's reasoning is returned inside " +
-        "<local_model_thinking> tags before the implementation.",
+        `One-shot generation with the local model (${MODEL_NAME} via llama.cpp) that returns the code to you. ` +
+        "The returned code lands in your context and you still write it to disk yourself, so this does NOT save your " +
+        "tokens — prefer delegate_task for offloading work. Use this only when you need generated code back (e.g. a " +
+        "snippet to embed). Pass files the model must follow via `files`. Thinking is off by default; when on, the " +
+        "reasoning is returned inside <local_model_thinking> tags.",
       inputSchema: {
         type: "object",
         properties: {
@@ -400,6 +499,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         },
       ],
     };
+  }
+
+  if (name === "delegate_task") {
+    const run = delegationQueue.then(() => runDelegation(args, extra));
+    delegationQueue = run.catch(() => {});
+    try {
+      const { summary, outcome, checkPassed } = await run;
+      return { content: [{ type: "text", text: summary }], _meta: { outcome, checkPassed } };
+    } catch (err) {
+      return { content: [{ type: "text", text: `Error delegating task: ${err.message}` }], isError: true };
+    }
   }
 
   if (name === "implement_with_local_model") {

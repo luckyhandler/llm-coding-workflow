@@ -71,11 +71,14 @@ if curl --noproxy "*" -s -f "${URL}/health" >/dev/null 2>&1; then
     exit 0
   fi
   echo "Stopping llama-server serving ${LOADED_MODEL:-unknown model}..."
+  # Wait for the old process to exit, not just to stop answering: it can take a
+  # while to release its memory, and two loaded models may not fit side by side.
   pkill -f "llama-server.*--port ${PORT}" || true
-  for _ in {1..30}; do
-    curl --noproxy "*" -s -f "${URL}/health" >/dev/null 2>&1 || break
+  for _ in {1..60}; do
+    pgrep -f "llama-server.*--port ${PORT}" >/dev/null || break
     sleep 1
   done
+  pkill -9 -f "llama-server.*--port ${PORT}" || true
 fi
 
 if [ ! -f "${MODEL_PATH}" ]; then

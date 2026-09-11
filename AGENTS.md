@@ -12,7 +12,6 @@ Validate skill changes with `scripts/validate-agent-skills.sh`. Test installatio
 
 1. **Frontier Operations**: Handle all reasoning, architecture, planning, and code changes directly by default.
 2. **Explicit Delegation Only**: When explicitly instructed by the user or triggered by an orchestration command (`/offload`, `/local-implement`):
-   - Verify `llama-server` is up (`scripts/ensure-llama-server.sh` or `http://127.0.0.1:8090/health`).
-   - Delegate implementation to the `implement_with_local_model` MCP tool by passing the interface specification.
-   - Inspect the local worker's `<local_model_thinking>` block to review its reasoning, assumptions, and trade-offs.
-   - Write the returned code to disk and verify functionality.
+   - Follow the `local-model-implementation` skill: plan with minimal reading, then call the `delegate_task` MCP tool with a brief, `cwd` = repository root, and a `check` command. The local agent edits the repository itself and returns a short summary.
+   - Review the summary and spot-check `git diff` proportionally to risk; follow up with the returned `session_id`.
+   - Run the broader checks and verify functionality before reporting.

@@ -1,6 +1,6 @@
 # Agent-Neutral Coding Workflow
 
-A shared toolkit for consistent engineering workflows across Agent Skills-compatible clients. It includes portable skills for commits, feature planning, QA, conventions, architecture review, and explicit implementation offload to a local Gemma model.
+A shared toolkit for consistent engineering workflows across Agent Skills-compatible clients. It includes portable skills for commits, feature planning, QA, conventions, architecture review, and explicit implementation offload to a local coding agent.
 
 ## Shared agent skills
 
@@ -11,7 +11,7 @@ Canonical skills live in `agent-skills/`:
 - `qa-check` — discover and run the current repository's actual quality gates.
 - `code-conventions` — shared engineering baseline, subordinate to repository rules.
 - `architecture-review` — architecture-focused review against local decisions.
-- `local-model-implementation` — explicitly offload an already-planned implementation to local Gemma.
+- `local-model-implementation` — explicitly delegate an already-planned implementation to the local coding agent to save the primary agent's tokens.
 
 The skills use the portable `SKILL.md` format and contain no dependency on a particular frontier agent. Repository-specific architecture, commands, scopes, and exceptions remain in each repository's `AGENTS.md` and linked documentation.
 
@@ -68,19 +68,22 @@ Claude Code / Opus / Codex / Hermes
   → planning
   → architecture
   → review / critique
-        ↓  (explicit /offload command)
-Local llama.cpp model — Qwen3.8-27B or Gemma 4 (via local-gemma MCP)
-  → implementation
-  → code edits
+        ↓  (explicit /offload command → delegate_task)
+Local coding agent — OpenCode + Qwen3.8-27B on llama.cpp (via local-gemma MCP)
+  → navigates with LSP / grep, edits, runs the check
+  → returns a short summary instead of code
 ```
 
 ## Setup & Integration
 
-The `local-gemma` MCP server (`mcp-server/server.js`) exposes:
-- `implement_with_local_model`: Generates code with the configured local model (auto-boots `llama-server` on the Apple Silicon Metal GPU via `scripts/ensure-llama-server.sh`). Pass existing files via `files` so the worker sees real APIs; thinking is off by default (`thinking: true` enables it and returns the reasoning inside `<local_model_thinking>` tags). Output is streamed, so long generations are not cut off by HTTP timeouts.
-- `local_model_status`: Checks health of the local server and which model it has loaded.
+The `local-gemma` MCP server (`mcp-server/server.js`, details in `mcp-server/README.md`) exposes:
+- `delegate_task`: runs a local coding agent ([OpenCode](https://opencode.ai), `brew install opencode`, configured by `agent-worker/opencode.json`) in a git repository. It navigates with LSP and grep, edits files, and iterates on a `check` command; the caller gets a short summary (outcome, check result, changed files, notes, undo command, session id) instead of code. This is the token-saving path.
+- `implement_with_local_model`: one-shot generation that returns code (no token savings; for when you need code back).
+- `local_model_status`: checks health of the local server and which model it has loaded.
 
-MCP clients enforce their own tool-call timeouts. The local worker can take several minutes, so registrations set 30 minutes: Claude Code `"timeout": 1800000` (milliseconds; values below 1000 are ignored), Codex `tool_timeout_sec = 1800`.
+Both generating tools auto-boot `llama-server` on the Apple Silicon Metal GPU via `scripts/ensure-llama-server.sh`.
+
+MCP clients enforce their own tool-call timeouts. A delegation can take up to its 30-minute budget plus the check, so registrations set 60 minutes: Claude Code `"timeout": 3600000` (milliseconds; values below 1000 are ignored), Codex `tool_timeout_sec = 3600`.
 
 ## Hardware Profiling & Setup (Mac)
 

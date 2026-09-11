@@ -1,0 +1,62 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "local/worker",
+  "small_model": "local/worker",
+  "autoupdate": false,
+  "share": "disabled",
+  "lsp": true,
+  "mcp": {},
+  "provider": {
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama-server (local)",
+      "options": {
+        "baseURL": "{env:LOCAL_AGENT_BASE_URL}",
+        "apiKey": "local"
+      },
+      "models": {
+        "worker": {
+          "name": "Local worker model",
+          "tool_call": true,
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          }
+        }
+      }
+    }
+  },
+  "agent": {
+    "build": {
+      "steps": 80
+    }
+  },
+  "permission": {
+    "edit": "allow",
+    "lsp": "allow",
+    "task": "deny",
+    "skill": "deny",
+    "webfetch": "deny",
+    "websearch": "deny",
+    "question": "deny",
+    "external_directory": "deny",
+    "doom_loop": "deny",
+    "bash": {
+      "*": "allow",
+      "git commit*": "deny",
+      "git push*": "deny",
+      "git reset*": "deny",
+      "git checkout*": "deny",
+      "git restore*": "deny",
+      "git switch*": "deny",
+      "git stash*": "deny",
+      "git clean*": "deny",
+      "git rebase*": "deny",
+      "git merge*": "deny",
+      "git branch*": "deny",
+      "git tag*": "deny",
+      "rm -rf*": "deny",
+      "sudo*": "deny"
+    }
+  }
+}
