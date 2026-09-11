@@ -21,7 +21,28 @@ const KILL_GRACE_MS = 10_000;
 // OpenCode's own doom-loop check (identical consecutive calls) does not catch.
 const LOOP_WINDOW = 12;
 const LOOP_REPEATS = 4;
+// The exact-input rule above misses the commonest form of flailing: hunting one
+// symbol through directory after directory. Those calls differ only by path, so
+// searches are also tracked by query alone, with a higher bar to avoid tripping
+// on legitimate repeated lookups.
+const SEARCH_LOOP_REPEATS = 6;
+const SEARCH_TOOLS = new Set(["grep", "glob"]);
+const SEARCH_COMMAND = /^(?:cd\s+\S+\s*&&\s*)?(?:grep|rg|find|ls|cat|head|sed)\b/;
 const STEP_LIMIT_MARKER = "MAXIMUM STEPS REACHED";
+
+/** Query of a read-only search with paths and flags stripped, else null. */
+export function searchQuery(tool, input = {}) {
+  let raw = null;
+  if (SEARCH_TOOLS.has(tool)) raw = `${input.pattern ?? ""} ${input.include ?? ""}`;
+  else if (tool === "bash" && SEARCH_COMMAND.test(String(input.command ?? "").trim())) raw = String(input.command);
+  if (raw === null) return null;
+  const query = raw
+    .split(/\s+/)
+    .filter((token) => token && !token.startsWith("-") && !token.includes("/"))
+    .join(" ")
+    .trim();
+  return query ? `${tool}~${query}` : null;
+}
 
 // Agents run in their own process groups (see delegateTask); stop them if this server goes away.
 const activeGroups = new Set();
@@ -55,6 +76,11 @@ export function buildAgentMessage({ task, check }) {
     "- Before renaming or changing a function, method, class or field: lsp findReferences at its definition " +
       "(1-based line/character of the identifier) to get every usage.",
     "- Get a file's outline without reading all of it: lsp documentSymbol. Check a signature or type: lsp hover.",
+    "- To find which package or import provides a symbol you want to use: run lsp hover or lsp goToDefinition on an " +
+      "existing usage of it in this repository. That gives you the declaring file and the import to copy. If the " +
+      "symbol is already used elsewhere here, copy that file's import — do not go looking for the declaration.",
+    "- Never search a dependency cache or vendor directory (~/.pub-cache, node_modules, site-packages, vendor/, " +
+      ".dart_tool) for a definition. It is slow, it burns steps, and the answer is already in this repository.",
     "- Use grep/glob only for non-code text (strings, config keys, file names) or when lsp reports that no language " +
       "server is available.",
     "",
@@ -108,6 +134,7 @@ export function createEventTracker() {
     lastStepReason: null,
   };
   const recentCalls = [];
+  const recentSearches = [];
   return {
     state,
     /** Returns a short progress label for tool calls, otherwise null. */
@@ -136,6 +163,12 @@ export function createEventTracker() {
           recentCalls.push(signature);
           if (recentCalls.length > LOOP_WINDOW) recentCalls.shift();
           if (recentCalls.filter((call) => call === signature).length >= LOOP_REPEATS) state.looping = true;
+          const query = searchQuery(part.tool, input);
+          if (query) {
+            recentSearches.push(query);
+            if (recentSearches.length > LOOP_WINDOW) recentSearches.shift();
+            if (recentSearches.filter((item) => item === query).length >= SEARCH_LOOP_REPEATS) state.looping = true;
+          }
           const detail = input.command ?? input.filePath ?? input.pattern ?? input.operation ?? "";
           return `step ${state.steps}: ${part.tool} ${String(detail).split("/").slice(-2).join("/")}`.trim();
         }

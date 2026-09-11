@@ -10,6 +10,7 @@ import {
   createEventTracker,
   formatSummary,
   parseNumstat,
+  searchQuery,
   snapshotRepo,
 } from "./delegate.js";
 
@@ -59,6 +60,39 @@ test("event tracker flags alternating repeated tool calls as a loop", () => {
   assert.equal(tracker.state.looping, false);
   tracker.handle(call("python -c 'check(a/b)'"));
   assert.equal(tracker.state.looping, true);
+});
+
+test("searchQuery keeps the query and drops paths, flags and non-searches", () => {
+  assert.equal(searchQuery("bash", { command: 'grep -rn "UsageException" /a/lib' }), 'bash~grep "UsageException"');
+  // Same query, different directory — must collapse to one key.
+  assert.equal(
+    searchQuery("bash", { command: 'grep -rn "UsageException" /b/.pub-cache' }),
+    searchQuery("bash", { command: 'grep -rn "UsageException" /a/lib' })
+  );
+  assert.equal(searchQuery("grep", { pattern: "UsageException" }), "grep~UsageException");
+  assert.equal(searchQuery("bash", { command: "dart test test/a_test.dart" }), null);
+  assert.equal(searchQuery("edit", { filePath: "/a/b.dart" }), null);
+});
+
+test("event tracker flags one query searched across many paths as a loop", () => {
+  const tracker = createEventTracker();
+  const grep = (dir) => ({
+    type: "tool_use",
+    part: { tool: "bash", state: { input: { command: `grep -rn "UsageException" ${dir}` } } },
+  });
+  for (const dir of ["/lib", "/test", "/.dart_tool", "/pub-cache", "/vendor"]) tracker.handle(grep(dir));
+  // Five distinct commands: the exact-input rule cannot see this.
+  assert.equal(tracker.state.looping, false);
+  tracker.handle(grep("/another"));
+  assert.equal(tracker.state.looping, true);
+});
+
+test("event tracker does not flag varied searches as a loop", () => {
+  const tracker = createEventTracker();
+  for (const term of ["alpha", "beta", "gamma", "delta", "epsilon", "zeta"]) {
+    tracker.handle({ type: "tool_use", part: { tool: "bash", state: { input: { command: `grep -rn "${term}" lib` } } } });
+  }
+  assert.equal(tracker.state.looping, false);
 });
 
 test("event tracker ignores the echoed step-limit instruction", () => {
