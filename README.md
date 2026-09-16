@@ -1,6 +1,65 @@
-# Multi-Tier LLM Coding Workflow
+# Agent-Neutral Coding Workflow
 
-A local MCP-driven architecture where frontier agents (Claude Code, Claude Desktop, Hermes, Codex) handle planning and review, while offloading code implementation to a local Gemma 4 model via MCP only on explicit slash command.
+A shared toolkit for consistent engineering workflows across Agent Skills-compatible clients. It includes portable skills for commits, feature planning, QA, conventions, architecture review, and explicit implementation offload to a local coding agent.
+
+## Shared agent skills
+
+Canonical skills live in `agent-skills/`:
+
+- `commit` — inspect, validate, stage, and create focused commits without pushing.
+- `feature-plan` — produce repository-grounded implementation plans without coding.
+- `qa-check` — discover and run the current repository's actual quality gates.
+- `code-conventions` — shared engineering baseline, subordinate to repository rules.
+- `architecture-review` — architecture-focused review against local decisions.
+- `local-model-implementation` — explicitly delegate an already-planned implementation to the local coding agent to save the primary agent's tokens.
+
+The skills use the portable `SKILL.md` format and contain no dependency on a particular frontier agent. Repository-specific architecture, commands, scopes, and exceptions remain in each repository's `AGENTS.md` and linked documentation.
+
+### Skill categories and project fallback
+
+Every canonical skill declares three portable metadata values:
+
+```yaml
+metadata:
+  category: quality-assurance
+  scope: global
+  resolution: fallback
+```
+
+Allowed categories are defined by `agent-skills/categories.txt`. They form stable resolution slots:
+
+| Category | Global fallback |
+|---|---|
+| `architecture` | `architecture-review` |
+| `code-conventions` | `code-conventions` |
+| `commit` | `commit` |
+| `feature-planning` | `feature-plan` |
+| `implementation` | `local-model-implementation` |
+| `quality-assurance` | `qa-check` |
+
+A project can override a category with any skill name by placing a tagged `SKILL.md` in one of its project skill directories, preferably `.agents/skills/<name>/SKILL.md`:
+
+```yaml
+---
+name: pyt-qa-check
+description: Run the Park Your Truck quality gates.
+metadata:
+  category: quality-assurance
+  scope: project
+  resolution: replace
+---
+```
+
+Use `resolution: replace` when the project skill is complete, or `resolution: extend` when it adds project-specific requirements after the global baseline. The global skills actively search for these category tags, so fallback does not depend on an individual client's skill-name precedence. A project should define at most one applicable skill per category and scope; equally applicable conflicts require an explicit choice.
+
+Install or refresh all skills through symlinks:
+
+```bash
+./scripts/install-agent-skills.sh
+./scripts/validate-agent-skills.sh
+```
+
+Use `./scripts/install-agent-skills.sh --dry-run` to inspect the target locations first. The installer exposes the same canonical directories to the shared Agent Skills location and the supported client-specific locations; it refuses to replace an existing file, directory, or unrelated symlink.
 
 ## Architecture
 
@@ -9,24 +68,29 @@ Claude Code / Opus / Codex / Hermes
   → planning
   → architecture
   → review / critique
-        ↓  (explicit /offload command)
-Local llama.cpp / Gemma 4 (via local-gemma MCP)
-  → implementation
-  → code edits
+        ↓  (explicit /offload command → delegate_task)
+Local coding agent — OpenCode + Qwen3.8-27B on llama.cpp (via local-gemma MCP)
+  → navigates with LSP / grep, edits, runs the check
+  → returns a short summary instead of code
 ```
 
 ## Setup & Integration
 
-The `local-gemma` MCP server (`mcp-server/server.js`) exposes:
-- `implement_with_local_model`: Generates code locally on Gemma 4 (auto-boots `llama-server` on Apple Silicon Metal GPU).
-- `local_model_status`: Checks health of local server.
+The `local-gemma` MCP server (`mcp-server/server.js`, details in `mcp-server/README.md`) exposes:
+- `delegate_task`: runs a local coding agent ([OpenCode](https://opencode.ai), `brew install opencode`, configured by `agent-worker/opencode.json`) in a git repository. It navigates with LSP and grep, edits files, and iterates on a `check` command; the caller gets a short summary (outcome, check result, changed files, notes, undo command, session id) instead of code. This is the token-saving path.
+- `implement_with_local_model`: one-shot generation that returns code (no token savings; for when you need code back).
+- `local_model_status`: checks health of the local server and which model it has loaded.
+
+Both generating tools auto-boot `llama-server` on the Apple Silicon Metal GPU via `scripts/ensure-llama-server.sh`.
+
+MCP clients enforce their own tool-call timeouts. A delegation can take up to its 30-minute budget plus the check, so registrations set 60 minutes: Claude Code `"timeout": 3600000` (milliseconds; values below 1000 are ignored), Codex `tool_timeout_sec = 3600`.
 
 ## Hardware Profiling & Setup (Mac)
 
 Before running the workflow on a new laptop, run the benchmark and configuration profiler:
 
 ```bash
-# Detect hardware and view recommended Gemma model and flags
+# Detect hardware and view recommended model and flags
 ./scripts/benchmark-and-configure.sh --dry-run
 
 # Automatically apply optimal settings to .env
@@ -40,9 +104,11 @@ Before running the workflow on a new laptop, run the benchmark and configuration
 - **Entry (≤8GB Unified RAM)**: Gemma 2B / 4B Q4_K_M (16K context, 4 threads)
 - **Mid-Range (16GB–24GB Unified RAM)**: Gemma 4 12B Q4_0 / 9B Q4_K_M (32K context)
 - **High Performance (32GB–48GB Unified RAM)**: Gemma 4 12B Q4_0 (64K context, 8 Performance cores)
-- **Workstation (≥64GB Unified RAM)**: Gemma 27B Q8_0 (64K–128K context)
+- **Workstation (≥64GB Unified RAM)**: Qwen3.8-27B UD-Q6_K_XL with `ngram-mod,draft-mtp` speculative decoding using the model's embedded MTP head (64K context; ~28–45 tok/s on an M5 Max)
 
-## Registered Frontends
+After changing `.env`, run `./scripts/ensure-llama-server.sh --restart` so a running server picks up the new settings.
+
+## Registered frontends
 - **Claude Code**: `~/.claude.json`
 - **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Hermes**: `~/.hermes/config.yaml`
@@ -60,4 +126,3 @@ In your agent frontend (e.g. Claude Code):
   ```text
   /local-implement <task description>
   ```
-

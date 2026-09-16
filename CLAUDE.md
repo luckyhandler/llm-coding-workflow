@@ -10,15 +10,15 @@ Claude Code / Opus
         ↓
 Hermes orchestrator / MCP
         ↓
-Local llama.cpp / Gemma 4 (via local-gemma MCP)
+Local coding agent — OpenCode + Qwen3.8-27B on llama.cpp (via local-gemma MCP `delegate_task`)
 ```
 
 ## Protocol
 
 1. **Default Behavior**: Operate normally as an expert coding assistant for conversation, reasoning, code editing, and reviews.
 2. **Explicit Offloading (`/offload` or `/local-implement`)**:
-   - Verify `llama-server` is up (`scripts/ensure-llama-server.sh` or `http://127.0.0.1:8090/health`).
-   - Call the `implement_with_local_model` MCP tool with the interface specification.
-   - Write the returned code to disk and verify functionality.
+   - Follow the `local-model-implementation` skill: plan with minimal reading, then call the `delegate_task` MCP tool with a short brief, `cwd` = repository root, and a `check` command.
+   - The local agent edits the repository itself; review its summary and spot-check `git diff` proportionally to risk.
+   - Follow up with the returned `session_id`, then run the broader checks.
 
 

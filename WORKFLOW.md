@@ -7,10 +7,10 @@ Claude Code / Opus / Codex / Hermes
   → planning
   → architecture
   → review / critique
-        ↓  (explicit /offload command)
-Local llama.cpp / Gemma 4 (via local-gemma MCP)
-  → implementation
-  → code edits
+        ↓  (explicit /offload command → delegate_task)
+Local coding agent — OpenCode + Qwen3.8-27B on llama.cpp (via local-gemma MCP)
+  → navigates with LSP / grep, edits, runs the check
+  → returns a short summary (not code) to save the primary agent's tokens
 ```
 
 ## Machine Onboarding
@@ -25,10 +25,10 @@ To configure this environment on any Mac:
 1. **Standard Turns**: Agents handle design, discussions, reasoning, and normal code changes in context.
 2. **Explicit Offload (`/offload <task>`)**:
    - Agent ensures local `llama-server` is active (`scripts/ensure-llama-server.sh` or `http://127.0.0.1:8090/health`).
-   - Agent creates architecture & module specification (signatures/interfaces only).
-   - Agent MUST invoke `implement_with_local_model` via the `local-gemma` MCP server (strictly prohibited from generating code bodies in response or via subagents).
-   - Local Gemma 4 synthesizes the implementation.
-   - Agent receives output, writes files to disk, and critiques/tests.
+   - Agent plans with minimal reading and splits the work into units that one command can verify.
+   - Agent MUST invoke `delegate_task` via the `local-gemma` MCP server with a brief, `cwd`, and `check` (strictly prohibited from generating code bodies itself or via subagents).
+   - The local agent works in the repository (LSP/grep navigation, edits, runs the check) and returns outcome, check result, changed files, notes, an undo command, and a `session_id`.
+   - Agent reviews proportionally to risk (`git diff -- <file>` spot checks), sends follow-ups with the `session_id`, and runs the broader checks.
 
 
 

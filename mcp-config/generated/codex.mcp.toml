@@ -1,0 +1,52 @@
+# >>> global-mcp-registry (managed; do not edit)
+[mcp_servers.asana]
+url = "https://mcp.asana.com/v2/mcp"
+auth = "oauth"
+
+[mcp_servers.atlassian]
+url = "https://mcp.atlassian.com/v1/mcp"
+auth = "oauth"
+
+[mcp_servers.bigquery]
+command = "npx"
+args = ["-y", "@toolbox-sdk/server@>=0.26.0", "--prebuilt", "bigquery", "--stdio"]
+
+[mcp_servers.bigquery.env]
+BIGQUERY_LOCATION = ""
+BIGQUERY_PROJECT = "uryde-b0423"
+
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+
+[mcp_servers.dart]
+command = "dart"
+args = ["mcp-server"]
+
+[mcp_servers.figma]
+url = "https://mcp.figma.com/mcp"
+auth = "oauth"
+
+[mcp_servers.firebase]
+command = "npx"
+args = ["-y", "firebase-tools@latest", "mcp"]
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token_env_var = "GITHUB_PAT_TOKEN"
+
+[mcp_servers.local-gemma]
+command = "node"
+args = ["/Users/ninohandler/Development/llm-coding-workflow/mcp-server/server.js"]
+tool_timeout_sec = 3600
+
+[mcp_servers.mempalace]
+command = "mempalace-mcp"
+
+[mcp_servers.miro]
+url = "https://mcp.miro.com/"
+auth = "oauth"
+
+[mcp_servers.openai-developer-docs]
+url = "https://developers.openai.com/mcp"
+
+# <<< global-mcp-registry
