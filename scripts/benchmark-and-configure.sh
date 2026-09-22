@@ -141,17 +141,19 @@ elif [ "${RAM_GB}" -lt 56 ]; then
   REC_CACHE_TYPE_K="q8_0"
   REC_CACHE_TYPE_V="q8_0"
 else
-  # 64GB+ Tier: Qwen3.8-27B (dense, hybrid linear attention). The GGUF embeds the
-  # model's MTP head, so draft-mtp speculative decoding needs no extra draft file
-  # (~1.9x decode speed on an M5 Max); ngram-mod adds ~1.5x on edits that echo
+  # 64GB+ Tier: Qwen3.6-35B-A3B, a sparse MoE with ~3B active parameters. Decode
+  # is memory-bandwidth bound, so reading only the active experts makes it ~2.6x
+  # faster to decode and ~3.4x faster to prefill than the dense 27B it replaces
+  # on an M5 Max. The GGUF embeds the model's MTP head, so draft-mtp speculative
+  # decoding needs no extra draft file; ngram-mod adds more on edits that echo
   # the input files.
   TIER="Workstation / Max Memory (>= 64GB Unified RAM)"
-  REC_MODEL_NAME="qwen3.8-27b-ud-q6_k_xl"
-  REC_MODEL_FILE="Qwen3.8-27B-UD-Q6_K_XL.gguf"
-  REC_MODEL_KEY="qwen3.8-27b-q6_k_xl"
+  REC_MODEL_NAME="qwen3.6-35b-a3b-ud-q4_k_xl"
+  REC_MODEL_FILE="Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf"
+  REC_MODEL_KEY="qwen3.6-35b-a3b-q4_k_xl"
   REC_SPEC_TYPE="ngram-mod,draft-mtp"
-  # Only 1 in 4 layers uses full attention, so a 128K KV cache stays small; the
-  # delegate_task agent accumulates tool output and benefits from the headroom.
+  # The delegate_task agent accumulates tool output across steps, so keep the
+  # full 128K context; the MoE's active-parameter footprint leaves headroom.
   REC_CTX_SIZE=131072
   REC_BATCH_SIZE=4096
   REC_UBATCH_SIZE=1024
@@ -303,6 +305,27 @@ LOCAL_GEMMA_REASONING_EFFORT=medium
 
 # delegate_task agent (OpenCode)
 LOCAL_AGENT_MAX_MINUTES=30
+
+# Runtime backend: llama (llama.cpp, GGUF) or mlx (Apple MLX, Apple Silicon only).
+# MLX uses the M5 Neural Accelerators for prefill and keeps a cross-request
+# prompt cache; switch to it once an MLX model is downloaded.
+LOCAL_BACKEND=llama
+
+# MLX backend (only read when LOCAL_BACKEND=mlx). LOCAL_MLX_MODEL is a local
+# directory or a Hugging Face repo id; llama.cpp cannot load these weights.
+LOCAL_MLX_MODEL=models/mlx/Qwen3.8-27B-oQ6
+LOCAL_MLX_HOST=127.0.0.1
+LOCAL_MLX_PORT=8091
+LOCAL_MLX_CTX_SIZE=${REC_CTX_SIZE}
+LOCAL_MLX_MAX_TOKENS=${REC_MAX_TOKENS}
+LOCAL_MLX_TEMP=0.7
+LOCAL_MLX_TOP_P=0.8
+LOCAL_MLX_TOP_K=20
+LOCAL_MLX_MIN_P=0.0
+LOCAL_MLX_PREFILL_STEP_SIZE=2048
+LOCAL_MLX_PROMPT_CACHE_SIZE=4
+LOCAL_MLX_PROMPT_CACHE_BYTES=
+LOCAL_MLX_CHAT_TEMPLATE_ARGS=
 EOF
 
   echo "Successfully applied configuration to ${ENV_FILE}"
