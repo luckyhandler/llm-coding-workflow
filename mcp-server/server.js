@@ -34,7 +34,6 @@ import { delegateTask } from "./delegate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..");
-const ENSURE_SCRIPT = path.join(REPO_ROOT, "scripts", "ensure-llama-server.sh");
 
 // Load .env from REPO_ROOT if present
 const envPath = path.join(REPO_ROOT, ".env");
@@ -54,17 +53,28 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const MODEL_NAME =
-  process.env.LOCAL_GEMMA_MODEL_NAME || path.basename(process.env.LOCAL_GEMMA_MODEL_PATH || "local-model");
-const HOST = process.env.LOCAL_GEMMA_HOST || "127.0.0.1";
-const PORT = Number(process.env.LOCAL_GEMMA_PORT || "8090");
+// Two interchangeable local runtimes, both OpenAI-compatible:
+//   llama  -> llama.cpp llama-server (portable, GGUF, M5 Neural Accelerators unused)
+//   mlx    -> Apple MLX mlx_lm.server (Apple Silicon only, uses the M5 Neural
+//             Accelerators and keeps a cross-request prompt cache)
+// The harness above the model is backend-agnostic; only the launcher, port, and
+// health probe differ.
+const BACKEND = (process.env.LOCAL_BACKEND || "llama").toLowerCase();
+const IS_MLX = BACKEND === "mlx";
+const ENSURE_SCRIPT = path.join(REPO_ROOT, "scripts", IS_MLX ? "ensure-mlx-server.sh" : "ensure-llama-server.sh");
+
+const MODEL_NAME = IS_MLX
+  ? path.basename(process.env.LOCAL_MLX_MODEL || "Qwen3.8-27B-oQ6")
+  : process.env.LOCAL_GEMMA_MODEL_NAME || path.basename(process.env.LOCAL_GEMMA_MODEL_PATH || "local-model");
+const HOST = (IS_MLX ? process.env.LOCAL_MLX_HOST : process.env.LOCAL_GEMMA_HOST) || "127.0.0.1";
+const PORT = Number((IS_MLX ? process.env.LOCAL_MLX_PORT : process.env.LOCAL_GEMMA_PORT) || (IS_MLX ? "8091" : "8090"));
 const BASE_URL = `http://${HOST}:${PORT}`;
-const DEFAULT_MAX_TOKENS = parseInt(process.env.LOCAL_GEMMA_MAX_TOKENS || "16384", 10);
+const DEFAULT_MAX_TOKENS = parseInt((IS_MLX ? process.env.LOCAL_MLX_MAX_TOKENS : process.env.LOCAL_GEMMA_MAX_TOKENS) || "16384", 10);
 const DEFAULT_THINKING = /^(1|true|on|yes)$/i.test(process.env.LOCAL_GEMMA_THINKING || "false");
 const DEFAULT_REASONING_EFFORT = process.env.LOCAL_GEMMA_REASONING_EFFORT || "medium";
 const MAX_FILE_BYTES = parseInt(process.env.LOCAL_GEMMA_MAX_FILE_BYTES || "262144", 10);
 const PROGRESS_INTERVAL_MS = 5000;
-const CTX_SIZE = parseInt(process.env.LOCAL_GEMMA_CTX_SIZE || "65536", 10);
+const CTX_SIZE = parseInt((IS_MLX ? process.env.LOCAL_MLX_CTX_SIZE : process.env.LOCAL_GEMMA_CTX_SIZE) || "65536", 10);
 const AGENT_CONFIG = path.join(REPO_ROOT, "agent-worker", "opencode.json");
 const AGENT_STATE_DIR = (process.env.LOCAL_AGENT_STATE_DIR || path.join(os.homedir(), ".local", "state", "local-gemma-agent")).replace(
   /^~(?=\/)/,
@@ -97,6 +107,12 @@ function samplingPreset(thinking) {
 
 async function isServerHealthy() {
   try {
+    // llama-server exposes /health; mlx_lm.server does not, but its
+    // OpenAI-compatible model listing answers the same "is it up?" question.
+    if (IS_MLX) {
+      const res = await fetch(`${BASE_URL}/v1/models`, { signal: AbortSignal.timeout(1500) });
+      return res.ok;
+    }
     const res = await fetch(`${BASE_URL}/health`, { signal: AbortSignal.timeout(1500) });
     if (!res.ok) return false;
     const data = await res.json();
@@ -483,8 +499,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     let loaded = "";
     if (healthy) {
       try {
-        const props = await (await fetch(`${BASE_URL}/props`, { signal: AbortSignal.timeout(1500) })).json();
-        loaded = ` (loaded model: ${path.basename(props.model_path ?? "unknown")})`;
+        if (IS_MLX) {
+          const models = await (await fetch(`${BASE_URL}/v1/models`, { signal: AbortSignal.timeout(1500) })).json();
+          loaded = ` (loaded model: ${models.data?.[0]?.id ?? "unknown"})`;
+        } else {
+          const props = await (await fetch(`${BASE_URL}/props`, { signal: AbortSignal.timeout(1500) })).json();
+          loaded = ` (loaded model: ${path.basename(props.model_path ?? "unknown")})`;
+        }
       } catch {
         // Status is still useful without the model name.
       }
@@ -494,8 +515,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         {
           type: "text",
           text: healthy
-            ? `Local model server is running at ${BASE_URL}${loaded}. Configured model: ${MODEL_NAME}.`
-            : `Local model server is NOT running. It will auto-start on the next implement_with_local_model call.`,
+            ? `Local model server (${BACKEND}) is running at ${BASE_URL}${loaded}. Configured model: ${MODEL_NAME}.`
+            : `Local model server (${BACKEND}) is NOT running. It will auto-start on the next implement_with_local_model call.`,
         },
       ],
     };

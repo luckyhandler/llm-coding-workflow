@@ -303,6 +303,27 @@ LOCAL_GEMMA_REASONING_EFFORT=medium
 
 # delegate_task agent (OpenCode)
 LOCAL_AGENT_MAX_MINUTES=30
+
+# Runtime backend: llama (llama.cpp, GGUF) or mlx (Apple MLX, Apple Silicon only).
+# MLX uses the M5 Neural Accelerators for prefill and keeps a cross-request
+# prompt cache; switch to it once an MLX model is downloaded.
+LOCAL_BACKEND=llama
+
+# MLX backend (only read when LOCAL_BACKEND=mlx). LOCAL_MLX_MODEL is a local
+# directory or a Hugging Face repo id; llama.cpp cannot load these weights.
+LOCAL_MLX_MODEL=models/mlx/Qwen3.8-27B-oQ6
+LOCAL_MLX_HOST=127.0.0.1
+LOCAL_MLX_PORT=8091
+LOCAL_MLX_CTX_SIZE=${REC_CTX_SIZE}
+LOCAL_MLX_MAX_TOKENS=${REC_MAX_TOKENS}
+LOCAL_MLX_TEMP=0.7
+LOCAL_MLX_TOP_P=0.8
+LOCAL_MLX_TOP_K=20
+LOCAL_MLX_MIN_P=0.0
+LOCAL_MLX_PREFILL_STEP_SIZE=2048
+LOCAL_MLX_PROMPT_CACHE_SIZE=4
+LOCAL_MLX_PROMPT_CACHE_BYTES=
+LOCAL_MLX_CHAT_TEMPLATE_ARGS=
 EOF
 
   echo "Successfully applied configuration to ${ENV_FILE}"

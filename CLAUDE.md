@@ -10,7 +10,7 @@ Claude Code / Opus
         ↓
 Hermes orchestrator / MCP
         ↓
-Local coding agent — OpenCode + Qwen3.8-27B on llama.cpp (via local-gemma MCP `delegate_task`)
+Local coding agent — OpenCode + Qwen3.8-27B (set in `.env`) on llama.cpp (via local-gemma MCP `delegate_task`)
 ```
 
 ## Protocol

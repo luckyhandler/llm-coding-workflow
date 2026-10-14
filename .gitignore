@@ -7,9 +7,16 @@
 models/*.gguf
 models/*.bin
 models/*.safetensors
+models/**/*.gguf
+models/**/*.bin
+models/**/*.safetensors
 
 # Cache directories
 models/.cache/
+models/**/.cache/
+
+# MLX model directories (weights plus tokenizer/config metadata)
+models/mlx/
 *.cache/
 __pycache__/
 *.pyc

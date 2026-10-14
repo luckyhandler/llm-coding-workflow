@@ -17,6 +17,8 @@ declare -A MODEL_URLS=(
   ["qwen3.8-27b-q5_k_xl"]="https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q5_K_XL.gguf"
   ["qwen3.8-27b-q6_k_xl"]="https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q6_K_XL.gguf"
   ["qwen3.8-27b-mtp"]="https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/MTP/mtp-Qwen3.8-27B-Q4_0.gguf"
+  ["qwen3.6-35b-a3b-q4_k_xl"]="https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf"
+  ["qwen3.6-35b-a3b-q5_k_xl"]="https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF/resolve/main/Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf"
 )
 
 declare -A MODEL_FILENAMES=(
@@ -29,6 +31,8 @@ declare -A MODEL_FILENAMES=(
   ["qwen3.8-27b-q5_k_xl"]="Qwen3.8-27B-UD-Q5_K_XL.gguf"
   ["qwen3.8-27b-q6_k_xl"]="Qwen3.8-27B-UD-Q6_K_XL.gguf"
   ["qwen3.8-27b-mtp"]="mtp-Qwen3.8-27B-Q4_0.gguf"
+  ["qwen3.6-35b-a3b-q4_k_xl"]="Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf"
+  ["qwen3.6-35b-a3b-q5_k_xl"]="Qwen3.6-35B-A3B-UD-Q5_K_XL.gguf"
 )
 
 MODEL_KEY="${1:-}"

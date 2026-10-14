@@ -322,7 +322,10 @@ export async function delegateTask(args, options) {
     provider: {
       local: {
         models: {
-          worker: {
+          // Must stay "default_model": mlx_lm.server treats every other model id
+          // as a repo/path to load on demand, so any other name makes it try to
+          // fetch that repo. llama-server ignores the field.
+          default_model: {
             // Thinking can take >16K tokens in a single step on hard problems.
             limit: { context: options.ctxSize, output: thinking ? 32768 : 16384 },
             // Passed through into the request body by @ai-sdk/openai-compatible.
@@ -338,7 +341,7 @@ export async function delegateTask(args, options) {
     },
   };
 
-  const cliArgs = ["run", "--format", "json", "--auto", "--title", `delegate: ${task.slice(0, 60)}`, "-m", "local/worker"];
+  const cliArgs = ["run", "--format", "json", "--auto", "--title", `delegate: ${task.slice(0, 60)}`, "-m", "local/default_model"];
   if (sessionId) cliArgs.push("--session", sessionId);
   cliArgs.push(message);
 
@@ -355,6 +358,10 @@ export async function delegateTask(args, options) {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
+        // opencode may resolve the working directory from PWD; keep it in
+        // sync with the real spawn cwd so the agent works in `cwd`, not in
+        // whatever directory the MCP server was started from.
+        PWD: cwd,
         // Isolate from the user's global OpenCode config (MCP servers, plugins, cloud providers).
         XDG_CONFIG_HOME: path.join(options.stateDir, "config"),
         XDG_DATA_HOME: path.join(options.stateDir, "data"),
