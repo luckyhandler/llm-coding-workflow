@@ -104,7 +104,7 @@ Before running the workflow on a new laptop, run the benchmark and configuration
 - **Entry (≤8GB Unified RAM)**: Gemma 2B / 4B Q4_K_M (16K context, 4 threads)
 - **Mid-Range (16GB–24GB Unified RAM)**: Gemma 4 12B Q4_0 / 9B Q4_K_M (32K context)
 - **High Performance (32GB–48GB Unified RAM)**: Gemma 4 12B Q4_0 (64K context, 8 Performance cores)
-- **Workstation (≥64GB Unified RAM)**: Qwen3.6-35B-A3B UD-Q4_K_XL (sparse MoE, ~3B active) with `ngram-mod,draft-mtp` speculative decoding using the model's embedded MTP head (128K context; ~106 tok/s decode, ~1218 tok/s prefill on an M5 Max)
+- **Workstation (≥64GB Unified RAM)**: Qwen3.8-27B UD-Q6_K_XL with `ngram-mod,draft-mtp` speculative decoding using the model's embedded MTP head (128K context; ~41 tok/s decode, ~360 tok/s prefill on an M5 Max)
 
 After changing `.env`, run `./scripts/ensure-llama-server.sh --restart` so a running server picks up the new settings.
 
