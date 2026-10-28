@@ -341,7 +341,9 @@ export async function delegateTask(args, options) {
     },
   };
 
-  const cliArgs = ["run", "--format", "json", "--auto", "--title", `delegate: ${task.slice(0, 60)}`, "-m", "local/default_model"];
+  // OpenCode 2.x routes `run` through a shared background service by default,
+  // which never sees this run's isolated config; --standalone keeps it private.
+  const cliArgs = ["run", "--standalone", "--format", "json", "--auto", "--title", `delegate: ${task.slice(0, 60)}`, "-m", "local/default_model"];
   if (sessionId) cliArgs.push("--session", sessionId);
   cliArgs.push(message);
 

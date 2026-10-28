@@ -39,3 +39,6 @@ pubspec.lock
 
 # macOS
 .DS_Store
+
+# Side-by-side llama.cpp builds
+tools/

@@ -45,6 +45,13 @@ if [ -n "${LOCAL_GEMMA_DRAFT_MODEL_PATH:-}" ]; then
   DRAFT_MODEL_PATH="$(resolve_path "${LOCAL_GEMMA_DRAFT_MODEL_PATH}")"
 fi
 
+# A side-by-side build can be used when a model needs a newer llama.cpp than
+# the one on PATH (a bare name is looked up on PATH, a path is repo-relative).
+LLAMA_SERVER_BIN="${LOCAL_GEMMA_LLAMA_SERVER_BIN:-llama-server}"
+if [[ "${LLAMA_SERVER_BIN}" == */* ]]; then
+  LLAMA_SERVER_BIN="$(resolve_path "${LLAMA_SERVER_BIN}")"
+fi
+
 LOG_FILE="/tmp/llama-server.log"
 GPU_LAYERS="${LOCAL_GEMMA_GPU_LAYERS:-99}"
 CTX_SIZE="${LOCAL_GEMMA_CTX_SIZE:-65536}"
@@ -88,8 +95,9 @@ if [ ! -f "${MODEL_PATH}" ]; then
 fi
 
 CMD=(
-  llama-server
+  "${LLAMA_SERVER_BIN}"
   --model "${MODEL_PATH}"
+  --jinja
   --host "${HOST}"
   --port "${PORT}"
   --n-gpu-layers "${GPU_LAYERS}"

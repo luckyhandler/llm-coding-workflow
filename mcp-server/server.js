@@ -99,6 +99,9 @@ function samplingPreset(thinking) {
       ? { temperature: 1.0, top_p: 0.95, top_k: 20, min_p: 0.0, presence_penalty: 0.0 }
       : { temperature: 0.7, top_p: 0.8, top_k: 20, min_p: 0.0, presence_penalty: 0.0 };
   }
+  if (name.includes("flint")) {
+    return { temperature: 1.0, top_p: 0.95, top_k: 20, min_p: 0.0 };
+  }
   if (name.includes("gemma")) {
     return { temperature: 1.0, top_p: 0.95, top_k: 64, min_p: 0.0 };
   }
