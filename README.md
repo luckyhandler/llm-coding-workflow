@@ -157,6 +157,14 @@ llama.cpp with `draft-mtp,ngram-mod`):
 |---|---|---|---|
 | Qwen3.8-27B Q6_K (dense, 25.3 GB) | 360 tok/s | 41.4 tok/s | 4/4, 82s |
 | Qwen3.6-35B-A3B UD-Q4_K_XL (MoE, 22.9 GB) | 1218 tok/s | 106 tok/s | 4/4, 57s |
+| Flint Q4_1 (MoE 40B-A2.5B, 26.0 GB, llama.cpp 0.8.0) | 3025 tok/s | 122 tok/s | 4/4, 64s |
+
+Flint ([RecursiveSI/flint-int4-gguf](https://huggingface.co/RecursiveSI/flint-int4-gguf))
+is the current default on this machine. It needs llama.cpp >= 0.8.0; while Homebrew
+ships 0.7.0, build v0.8.0 into `tools/llama.cpp-0.8.0` and set
+`LOCAL_GEMMA_LLAMA_SERVER_BIN=tools/llama.cpp-0.8.0/build/bin/llama-server`. On the same
+0.8.0 build, Qwen3.8-27B Q6 measured 439 / 46 tok/s and 4/4 in 249s. The four eval
+tasks do not separate the two on quality (both pass all of them).
 
 The MoE's ~3B active parameters make it 2.6–3.4x faster; both passed every task,
 so the suite shows a speed win but not a capability difference. `Qwen3-Coder-Next`
