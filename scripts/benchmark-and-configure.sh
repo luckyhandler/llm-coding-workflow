@@ -141,23 +141,24 @@ elif [ "${RAM_GB}" -lt 56 ]; then
   REC_CACHE_TYPE_K="q8_0"
   REC_CACHE_TYPE_V="q8_0"
 else
-  # 64GB+ Tier: Qwen3.8-27B (dense, hybrid linear attention). The GGUF embeds the
-  # model's MTP head, so draft-mtp speculative decoding needs no extra draft file
-  # (~1.9x decode speed on an M5 Max); ngram-mod adds ~1.5x on edits that echo
-  # the input files.
+  # 64GB+ Tier: Recursive Flint (40B-total / 2.5B-active MoE, official Q4_1
+  # GGUF for Metal). Needs llama.cpp >= 0.8.0. Same 4/4 eval pass rate as
+  # Qwen3.8-27B Q6 at ~4x the wall-clock speed on an M5 Max (decode 122 vs 46
+  # tok/s); the vendor ships no MTP head, so no speculative decoding.
   TIER="Workstation / Max Memory (>= 64GB Unified RAM)"
-  REC_MODEL_NAME="qwen3.8-27b-ud-q6_k_xl"
-  REC_MODEL_FILE="Qwen3.8-27B-UD-Q6_K_XL.gguf"
-  REC_MODEL_KEY="qwen3.8-27b-q6_k_xl"
-  REC_SPEC_TYPE="ngram-mod,draft-mtp"
-  # Only 1 in 4 layers uses full attention, so a 128K KV cache stays small; the
-  # delegate_task agent accumulates tool output and benefits from the headroom.
+  REC_MODEL_NAME="flint-int4-q4_1"
+  REC_MODEL_FILE="flint-int4-q4_1.gguf"
+  REC_MODEL_KEY="flint-int4-q4_1"
+  REC_SPEC_TYPE=""
+  # The delegate_task agent accumulates tool output and benefits from 128K of
+  # headroom. The vendor recommends an unquantized (f16) KV cache; 4096/1024
+  # batches double prefill over the vendor's 256/128 example.
   REC_CTX_SIZE=131072
   REC_BATCH_SIZE=4096
   REC_UBATCH_SIZE=1024
   REC_MAX_TOKENS=16384
-  REC_CACHE_TYPE_K="q8_0"
-  REC_CACHE_TYPE_V="q8_0"
+  REC_CACHE_TYPE_K="f16"
+  REC_CACHE_TYPE_V="f16"
 fi
 
 # If a model exists in .env and is present on disk, keep it
