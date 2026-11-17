@@ -1,0 +1,19 @@
+
+>>> qwen3.8-27b-q6-v080 :: 01-duration
+    PASS (81s, 1 files, completed)
+
+>>> qwen3.8-27b-q6-v080 :: 02-chunk-bug
+    PASS (28s, 1 files, completed)
+
+>>> qwen3.8-27b-q6-v080 :: 03-semver
+    PASS (84s, 1 files, completed)
+
+>>> qwen3.8-27b-q6-v080 :: 04-pipeline
+    PASS (56s, 2 files, completed)
+
+qwen3.8-27b-q6-v080: 4/4 tasks passed
+  PASS  01-duration  81s  1 files  completed
+  PASS  02-chunk-bug  28s  1 files  completed
+  PASS  03-semver  84s  1 files  completed
+  PASS  04-pipeline  56s  2 files  completed
+Report: evals/results/qwen38-v080-eval.json
