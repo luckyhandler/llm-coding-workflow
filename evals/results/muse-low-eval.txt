@@ -1,0 +1,19 @@
+
+>>> muse-glimmer-low :: 01-duration
+    PASS (82s, 1 files, completed)
+
+>>> muse-glimmer-low :: 02-chunk-bug
+    PASS (79s, 1 files, completed)
+
+>>> muse-glimmer-low :: 03-semver
+    PASS (122s, 1 files, completed)
+
+>>> muse-glimmer-low :: 04-pipeline
+    PASS (73s, 2 files, completed)
+
+muse-glimmer-low: 4/4 tasks passed
+  PASS  01-duration  82s  1 files  completed
+  PASS  02-chunk-bug  79s  1 files  completed
+  PASS  03-semver  122s  1 files  completed
+  PASS  04-pipeline  73s  2 files  completed
+Report: evals/results/muse-low-eval.json
