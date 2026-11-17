@@ -11,7 +11,10 @@
  *
  * Each task directory holds `task.md`, a `check.sh`, and a `repo/` seed. The
  * seed is copied to a scratch git repository per run; `check.sh` is the pass
- * condition. Results are printed and written as JSON when --out is given.
+ * condition the agent sees. A task may also have a `hidden/` directory and a
+ * `verify.sh`: the hidden files are copied into the repo after the agent
+ * finishes and `verify.sh` must pass too. Results are printed and written as
+ * JSON when --out is given.
  */
 
 import fs from "node:fs";
@@ -109,10 +112,24 @@ async function runTask(name, args, runRoot) {
   }
   const tampered = (result.changes ?? []).some((c) => testFiles.includes(c.path));
   const changes = (result.changes ?? []).filter((c) => !testFiles.includes(c.path));
+  const visiblePassed = verified ? verified.passed : result.checkResult?.passed ?? false;
+
+  // Hidden tests: copied in only after the agent has finished, so a model can't
+  // fit its code to them. They separate "made the visible tests green" from
+  // "implemented the spec", which is where models of similar speed differ.
+  let hidden = null;
+  const hiddenDir = path.join(taskDir, "hidden");
+  if (fs.existsSync(hiddenDir)) {
+    fs.cpSync(hiddenDir, repo, { recursive: true });
+    hidden = await runCheck(repo, `bash ${path.join(taskDir, "verify.sh")}`);
+  }
 
   return {
     task: name,
-    passed: verified ? verified.passed : result.checkResult?.passed ?? false,
+    passed: visiblePassed && (hidden ? hidden.passed : true),
+    visiblePassed,
+    hiddenPassed: hidden ? hidden.passed : null,
+    hiddenTail: hidden ? hidden.output.trim().split("\n").slice(-3).join(" | ") : null,
     agentCheckPassed: result.checkResult?.passed ?? false,
     tampered,
     outcome: result.outcome,
@@ -144,7 +161,11 @@ for (const name of names) {
     const r = await runTask(name, args, runRoot);
     results.push(r);
     const secs = Math.round(r.elapsedMs / 1000);
-    const flags = [r.tampered ? "TAMPERED TESTS" : null, r.agentCheckPassed && !r.passed ? "failed re-verify" : null].filter(Boolean);
+    const flags = [
+      r.tampered ? "TAMPERED TESTS" : null,
+      r.agentCheckPassed && !r.visiblePassed ? "failed re-verify" : null,
+      r.visiblePassed && r.hiddenPassed === false ? "failed hidden tests" : null,
+    ].filter(Boolean);
     process.stderr.write(`    ${r.passed ? "PASS" : "FAIL"} (${secs}s, ${r.changes} files, ${r.outcome}${flags.length ? ", " + flags.join(", ") : ""})\n`);
   } catch (err) {
     results.push({ task: name, passed: false, outcome: `error: ${err.message}`, elapsedMs: 0, changes: 0 });
@@ -155,7 +176,8 @@ for (const name of names) {
 const passed = results.filter((r) => r.passed).length;
 console.log(`\n${label}: ${passed}/${results.length} tasks passed`);
 for (const r of results) {
-  console.log(`  ${r.passed ? "PASS" : "FAIL"}  ${r.task}  ${Math.round(r.elapsedMs / 1000)}s  ${r.changes} files  ${r.outcome}${r.tampered ? "  (tampered tests)" : ""}`);
+  const hiddenNote = r.hiddenPassed === false ? "  (hidden tests failed)" : "";
+  console.log(`  ${r.passed ? "PASS" : "FAIL"}  ${r.task}  ${Math.round(r.elapsedMs / 1000)}s  ${r.changes} files  ${r.outcome}${r.tampered ? "  (tampered tests)" : ""}${hiddenNote}`);
 }
 
 if (args.out) {

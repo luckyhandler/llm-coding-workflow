@@ -114,7 +114,8 @@ Caveats recorded honestly:
 
 - **Capability is not proven.** Both models passed every eval task, so the suite
   demonstrates a speed advantage, not a capability advantage. A stronger claim
-  needs harder or more numerous tasks.
+  needs harder or more numerous tasks — tasks `05`–`08` with hidden tests were
+  added for that and have not been run on these models yet.
 - **`Qwen3-Coder-Next` does not fit.** Its MoE is ~50 GB even at Q4, leaving no
   room for usable context on 64 GB.
 

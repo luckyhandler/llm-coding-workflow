@@ -144,11 +144,26 @@ Run `--dry-run` first to confirm the parsed tasks and their checks.
 `delegate_task` harness, so a model comparison reflects navigation, edits, and
 iterating on a check rather than raw token speed. Each task is a small repo with
 a `check.sh`; test files are restored and the check re-run before a pass counts,
-so weakening tests does not score.
+so weakening tests does not score. A task can also ship a `hidden/` directory and
+a `verify.sh`: the hidden tests are copied in only after the agent finishes, so
+a pass means the spec was implemented, not just the visible tests turned green.
+
+Tasks `01`–`04` are warm-ups that every tested model passes. Tasks `05`–`08`
+are meant to separate models on quality:
+
+| Task | What it demands |
+|---|---|
+| `05-glob` | Glob matcher with `**`, classes, nested braces, escapes, dotfile rules and a polynomial-time requirement |
+| `06-money-refactor` | Float-to-integer-cents migration across five modules with exact rounding rules |
+| `07-ledger-bugs` | Three symptoms whose root causes sit in three different files; the report layer must stay untouched |
+| `08-notes-export` | New export format in a 20-file CLI, following its plugin-registration convention |
 
 ```bash
 node mcp-server/eval.js --base-url http://127.0.0.1:8090/v1 --label my-model
+node mcp-server/eval.js --base-url http://127.0.0.1:8090/v1 --task 05-glob   # one task
 ```
+
+The results below were measured on tasks `01`–`04` only.
 
 Measured on an M5 Max 64GB (Qwen3.8-27B Q6_K vs Qwen3.6-35B-A3B UD-Q4_K_XL, both
 llama.cpp with `draft-mtp,ngram-mod`):
