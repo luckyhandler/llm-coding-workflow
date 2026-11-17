@@ -1,0 +1,7 @@
+model: /Users/ninohandler/Development/llm-coding-workflow/models/flint-int4-q4_1.gguf
+test       runs prompt_tok compl_tok  wall_s prefill_tok/s decode_tok/s
+prefill       2      19223         1       -          2355            -
+decode        2          0       256     2.2             -        115.5
+
+prefill = prompt-processing throughput (dominates first-token latency in agent loops)
+decode  = token-generation throughput (dominates total wall clock)

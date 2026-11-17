@@ -1,0 +1,19 @@
+
+>>> qwen3.8-27b-q6 :: 01-duration
+    PASS (100s, 1 files, completed)
+
+>>> qwen3.8-27b-q6 :: 02-chunk-bug
+    PASS (70s, 1 files, completed)
+
+>>> qwen3.8-27b-q6 :: 03-semver
+    PASS (81s, 1 files, completed)
+
+>>> qwen3.8-27b-q6 :: 04-pipeline
+    PASS (49s, 2 files, completed)
+
+qwen3.8-27b-q6: 4/4 tasks passed
+  PASS  01-duration  100s  1 files  completed
+  PASS  02-chunk-bug  70s  1 files  completed
+  PASS  03-semver  81s  1 files  completed
+  PASS  04-pipeline  49s  2 files  completed
+Report: /Users/ninohandler/Development/llm-coding-workflow/evals/results/qwen38-eval.json

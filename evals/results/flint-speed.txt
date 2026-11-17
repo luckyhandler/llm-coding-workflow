@@ -1,0 +1,7 @@
+model: flint
+test       runs prompt_tok compl_tok  wall_s prefill_tok/s decode_tok/s
+prefill       2      19223         1       -          1442            -
+decode        2          0       256     2.1             -        122.7
+
+prefill = prompt-processing throughput (dominates first-token latency in agent loops)
+decode  = token-generation throughput (dominates total wall clock)

@@ -1,0 +1,69 @@
+{
+  "label": "flint-q4_1",
+  "baseUrl": "http://127.0.0.1:8092/v1",
+  "passed": 4,
+  "total": 4,
+  "results": [
+    {
+      "task": "01-duration",
+      "passed": true,
+      "agentCheckPassed": true,
+      "tampered": false,
+      "outcome": "completed",
+      "elapsedMs": 9938,
+      "changes": 1,
+      "changedFiles": [
+        "duration.py"
+      ],
+      "checkTail": "Ran 4 tests in 0.000s |  | OK",
+      "summary": "Local agent completed in 10s (4 steps, 4 tool calls: read×2 write×1 shell×1; 0 tokens of local context).\nCheck `bash /Users/ninohandler/Development/llm-coding-workflow/evals/tasks/01-duration/check.sh`: PASS — OK\nChanged files (vs snapshot 5b461d30d1):\n  M duration.py  +28 -1\nAgent notes:\nAll tests pass. \n\n**Summary of changes:**\n- Implemented `parse_duration(text)` in `duration.py`:\n  - Empty string → returns `0`.\n  - Iterates over the string in number+unit pairs (any order, e.g. `\"1h30m\"`).\n  - Unknown units (`\"10x\"`), missing digits (`\"h30\"`, `\"abc\"`), missing units (`\"1h30\"`), and negatives (`\"-5m\"`) all raise `ValueError`.\n\n**Verification:** `bash /Users/ninohandler/Development/llm-coding-workflow/evals/tasks/01-duration/check.sh` → `OK` (4 tests passed).\n\n**Left undone / assumptions:** none — the implementation is dependency-free and keeps the original signature and docstring.\nUndo (in /private/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/01-duration/repo): git restore --source=5b461d30d16eac2ce09933bc3b716302c8350952 --worktree -- duration.py\nFollow up in the same agent session: session_id=ses_e7cb9f689ffekDAJ3CvXw0y8CG\nRun log: /var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/01-duration/state/runs/2026-10-28T16-09-27-271Z-bd02b7",
+      "runDir": "/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/01-duration"
+    },
+    {
+      "task": "02-chunk-bug",
+      "passed": true,
+      "agentCheckPassed": true,
+      "tampered": false,
+      "outcome": "completed",
+      "elapsedMs": 9319,
+      "changes": 1,
+      "changedFiles": [
+        "chunker.py"
+      ],
+      "checkTail": "Ran 6 tests in 0.000s |  | OK",
+      "summary": "Local agent completed in 9s (5 steps, 6 tool calls: read×3 glob×1 edit×1 shell×1; 0 tokens of local context).\nCheck `bash /Users/ninohandler/Development/llm-coding-workflow/evals/tasks/02-chunk-bug/check.sh`: PASS — OK\nChanged files (vs snapshot f027e96534):\n  M chunker.py  +1 -1\nAgent notes:\nAll 6 tests pass.\n\n**Fix:** Changed `range(0, len(items) - size + 1, size)` to `range(0, len(items), size)` in `chunker.py`.\n\n**Why it works:** The old range stopped before the last full-size window, so a final partial group was never emitted. Stepping by `size` over the full length produces full groups plus the leftover remainder, which `items[start:start + size]` naturally caps at the available elements.\n\n**Verified:** `check.sh` runs the full `test_chunker.py` suite — all 6 tests pass (even split, partial last group, size > input, empty list, no mutation, bad size).\n\n**Left undone / assumptions:** No changes were made to the signature, tests, or input handling — the fix relies solely on the existing `items[start:start + size]` slicing, which preserves order and never mutates the input.\nUndo (in /private/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/02-chunk-bug/repo): git restore --source=f027e965348faa1831f2cb569f14a2ee7b0118bb --worktree -- chunker.py\nFollow up in the same agent session: session_id=ses_e7cb9cf80ffernx7PznE5vlNRg\nRun log: /var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/02-chunk-bug/state/runs/2026-10-28T16-09-37-379Z-80f4b6",
+      "runDir": "/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/02-chunk-bug"
+    },
+    {
+      "task": "03-semver",
+      "passed": true,
+      "agentCheckPassed": true,
+      "tampered": false,
+      "outcome": "completed",
+      "elapsedMs": 25675,
+      "changes": 1,
+      "changedFiles": [
+        "semver.py"
+      ],
+      "checkTail": "Ran 9 tests in 0.000s |  | OK",
+      "summary": "Local agent completed in 26s (7 steps, 8 tool calls: read×3 shell×3 glob×1 write×1; 0 tokens of local context).\nCheck `bash /Users/ninohandler/Development/llm-coding-workflow/evals/tasks/03-semver/check.sh`: PASS — OK\nChanged files (vs snapshot c2789ab527):\n  M semver.py  +85 -2\nAgent notes:\nAll 9 tests pass, and the official check script (`check.sh`) reports OK.\n\n**What changed** in `semver.py`:\n- `parse_semver` now validates input against a SemVer pattern (`major.minor.patch` with optional `-prerelease` and ignored `+build`), returning `(major, minor, patch, prerelease)` with ints for numeric identifiers and a tuple for the prerelease list.\n- `compare_semver` compares core version numbers, then applies SemVer precedence: no-prerelease > prerelease, identifier-by-identifier comparison (numeric < alphanumeric, numeric compared numerically, strings lexicographically), and shorter prerelease tuples rank lower when prefixes are equal. Returns -1, 0, or 1.\n\n**Left undone / assumptions**: strict SemVer rules like rejecting leading-zero numeric identifiers were not enforced (the task only required rejecting non-`major.minor.patch` shapes, which is covered); build metadata is ignored as specified; the module remains dependency-free (stdlib `re` only).\nUndo (in /private/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/03-semver/repo): git restore --source=c2789ab527aaa4b65f15524b8b46b0ceb18537a6 --worktree -- semver.py\nFollow up in the same agent session: session_id=ses_e7cb9aa64ffe7KLI7Ur55tUA0k\nRun log: /var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/03-semver/state/runs/2026-10-28T16-09-46-868Z-9d0a63",
+      "runDir": "/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/03-semver"
+    },
+    {
+      "task": "04-pipeline",
+      "passed": true,
+      "agentCheckPassed": true,
+      "tampered": false,
+      "outcome": "completed",
+      "elapsedMs": 19345,
+      "changes": 2,
+      "changedFiles": [
+        "retry.py",
+        "worker.py"
+      ],
+      "checkTail": "Ran 8 tests in 0.000s |  | OK",
+      "summary": "Local agent completed in 19s (8 steps, 12 tool calls: shell×5 read×5 write×2; 0 tokens of local context).\nCheck `bash /Users/ninohandler/Development/llm-coding-workflow/evals/tasks/04-pipeline/check.sh`: PASS — OK\nChanged files (vs snapshot b72593d9da):\n  M retry.py  +9 -1\n  M worker.py  +9 -1\nAgent notes:\nAll 8 tests pass (4 in `test_retry.py`, 4 in `test_worker.py`).\n\n**Changes:**\n- `retry.py`: Implemented `with_retry(fn, attempts)` — validates `attempts < 1` raises `ValueError`, retries `fn()` up to `attempts` times, returns the first success, and re-raises the last exception if all attempts fail.\n- `worker.py`: Implemented `run_pending(queue, attempts=3)` — drains the queue via `queue.pop()` in FIFO order, calls `with_retry(fn, attempts)` per task, appends successful results in success order, and records failed task names in `failures` without stopping the rest.\n\n**Left undone / assumptions:**\n- Used bare `except Exception` in both retry and worker (worker swallows the final error intentionally to record the failure). The retry loop still re-raises the original last exception, preserving the tested behavior (e.g. `ValueError(\"fail 3\")`).\n- `TaskQueue.pop()` returns `None` on empty, which the `while len(queue) > 0` guard handles safely.\n\nNo signatures, tests, or unrelated files were modified.\nUndo (in /private/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/04-pipeline/repo): git restore --source=b72593d9da7dbc2f3a7b8e0d0fa7ca3633360ff2 --worktree -- retry.py worker.py\nFollow up in the same agent session: session_id=ses_e7cb94598ffevOu3cEDjAKIKPv\nRun log: /var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/04-pipeline/state/runs/2026-10-28T16-10-12-693Z-ec56e6",
+      "runDir": "/var/folders/bk/n9zjzzmj5m76mx4lx4gjmp8w0000gn/T/local-eval-ysoWrQ/04-pipeline"
+    }
+  ]
+}
